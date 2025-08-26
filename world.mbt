@@ -1,7 +1,7 @@
 // Box2D World simulation - basic physics stepping
 // World management and physics simulation loop
 
-// Simple world representation
+// Simple world representation with islands system
 pub(all) struct World {
   world_id : Int
   gravity : Vec2
@@ -9,6 +9,9 @@ pub(all) struct World {
   time_step : Double
   velocity_iterations : Int
   position_iterations : Int
+  island_manager : IslandManager
+  sleep_threshold : Double  // Energy threshold for body sleeping
+  enable_sleep : Bool       // Whether sleep is enabled for this world
 } derive(Eq, Show)
 
 // World storage - currently unused, can be added back when needed
@@ -22,7 +25,10 @@ pub fn create_world_from_def(def : WorldDef) -> World {
     bodies: [],
     time_step: 1.0 / 60.0,  // 60 FPS default
     velocity_iterations: 8,
-    position_iterations: 3
+    position_iterations: 3,
+    island_manager: create_island_manager(),
+    sleep_threshold: 0.01,  // Default sleep energy threshold
+    enable_sleep: def.enable_sleep
   }
 }
 
@@ -120,26 +126,40 @@ fn solve_contacts_with_constraints(
   current_bodies
 }
 
-// Step world simulation with constraint-based physics
+// Step world simulation with islands-based physics and sleeping
 pub fn step_world(world : World, dt : Double) -> World {
   // Apply gravity
   let bodies_with_gravity = apply_gravity(world.bodies, world.gravity, dt)
   
-  // Detect all collisions for this step
-  let collisions = detect_collisions(bodies_with_gravity)
+  // Update body sleep times based on their current velocities
+  let bodies_with_sleep_time = update_bodies_sleep_time(bodies_with_gravity, dt, world.enable_sleep)
   
-  // Solve contact constraints using sequential impulse method
-  let bodies_after_constraints = solve_contacts_with_constraints(
-    collisions, 
-    bodies_with_gravity,
+  // Detect all collisions for this step
+  let collisions = detect_collisions(bodies_with_sleep_time)
+  
+  // Build islands from current collisions and contacts
+  let updated_island_manager = build_islands_from_collisions(collisions, bodies_with_sleep_time)
+  
+  // Solve constraints using islands system for better performance
+  let bodies_after_constraints = solve_islands(
+    updated_island_manager,
+    bodies_with_sleep_time,
+    collisions,
     world.velocity_iterations,
     world.position_iterations
   )
   
   // Integrate positions
-  let final_bodies = integrate_bodies(bodies_after_constraints, dt)
+  let bodies_after_integration = integrate_bodies(bodies_after_constraints, dt)
   
-  { ..world, bodies: final_bodies }
+  // Process island sleeping (put sleepy islands to sleep)
+  let (final_island_manager, final_bodies) = process_island_sleeping(
+    updated_island_manager, 
+    bodies_after_integration, 
+    world.enable_sleep
+  )
+  
+  { ..world, bodies: final_bodies, island_manager: final_island_manager }
 }
 
 // Get body count in world
@@ -150,4 +170,15 @@ pub fn world_get_body_count(world : World) -> Int {
 // Get body by index
 pub fn world_get_body(world : World, index : Int) -> BodySim {
   world.bodies[index]
+}
+
+// Get island statistics for the world
+pub fn world_get_island_stats(world : World) -> (Int, Int, Int) {
+  get_island_stats(world.island_manager)
+}
+
+// Check if world has any active islands
+pub fn world_has_active_islands(world : World) -> Bool {
+  let (_, _, awake_islands) = world_get_island_stats(world)
+  awake_islands > 0
 }

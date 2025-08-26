@@ -14,6 +14,10 @@ pub(all) struct BodySim {
   inertia : Double
   inv_inertia : Double
   body_id : Int
+  // Sleep-related fields (ported from Box2D body structure)
+  sleep_threshold : Double  // Energy threshold for sleeping
+  sleep_time : Double       // Time body has been below sleep threshold
+  enable_sleep : Bool       // Whether this body can sleep
 } derive(Eq, Show)
 
 // Body state for dynamics
@@ -247,6 +251,10 @@ pub fn create_body_sim(body_def : BodyDef) -> BodySim {
     inv_mass,
     inertia: 1.0,
     inv_inertia: if mass > 0.0 { 1.0 } else { 0.0 },
-    body_id: -1  // Will be set when added to world
+    body_id: -1,  // Will be set when added to world
+    // Sleep fields from BodyDef
+    sleep_threshold: body_def.sleep_threshold,
+    sleep_time: 0.0,  // Bodies start awake
+    enable_sleep: body_def.enable_sleep
   }
 }

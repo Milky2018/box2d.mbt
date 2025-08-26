@@ -73,14 +73,14 @@ pub(all) struct RayCastInput {
 
 // Definition types (ported from Box2D types.h)
 pub(all) struct WorldDef {
-  gravity : Vec2
+  mut gravity : Vec2
   restitution_threshold : Double
   hit_event_threshold : Double
   contact_hertz : Double
   contact_damping_ratio : Double
   maximum_linear_speed : Double
-  enable_sleep : Bool
-  enable_continuous : Bool
+  mut enable_sleep : Bool
+  mut enable_continuous : Bool
 } derive(Eq, Show)
 
 pub(all) struct BodyDef {
