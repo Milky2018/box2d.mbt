@@ -175,3 +175,271 @@ pub fn compute_segment_aabb(segment : Segment, transform : Transform) -> AABB {
   
   { lower_bound: lower, upper_bound: upper }
 }
+
+// ============ Box2D Polygon Creation Functions ============
+
+// Create a polygon from a convex hull (ported from b2MakePolygon)
+pub fn make_polygon(hull : Hull, radius : Double) -> Polygon {
+  if hull.count < 3 {
+    // Return empty polygon for degenerate hulls
+    return {
+      vertices: [],
+      normals: [],
+      centroid: { x: 0.0, y: 0.0 },
+      radius: 0.0,
+      count: 0
+    }
+  }
+  
+  // Copy vertices from hull
+  let vertices = []
+  for i = 0; i < hull.count; i = i + 1 {
+    vertices.push(hull.points[i])
+  }
+  
+  // Compute outward normals for each edge
+  let normals = []
+  for i = 0; i < hull.count; i = i + 1 {
+    let i1 = i
+    let i2 = (i + 1) % hull.count
+    let edge = sub(vertices[i2], vertices[i1])
+    
+    // Normal points outward (perpendicular to edge, rotated 90° clockwise)
+    let normal = normalize({ x: edge.y, y: -edge.x })
+    normals.push(normal)
+  }
+  
+  // Compute centroid
+  let centroid = compute_polygon_centroid(vertices)
+  
+  {
+    vertices,
+    normals,
+    centroid,
+    radius,
+    count: hull.count
+  }
+}
+
+// Create a polygon from vertices array (ported from Box2D pattern)
+pub fn make_polygon_from_vertices(vertices : Array[Vec2], radius : Double) -> Polygon {
+  if vertices.length() < 3 {
+    // Return empty polygon for insufficient vertices
+    return {
+      vertices: [],
+      normals: [],
+      centroid: { x: 0.0, y: 0.0 },
+      radius: 0.0,
+      count: 0
+    }
+  }
+  
+  // Compute convex hull from vertices to ensure validity
+  let hull = compute_hull(vertices)
+  
+  // Create polygon from validated hull
+  make_polygon(hull, radius)
+}
+
+// Create a transformed polygon (ported from b2MakeOffsetPolygon)
+pub fn make_offset_polygon(hull : Hull, position : Vec2, rotation : Rot, radius : Double) -> Polygon {
+  if hull.count < 3 {
+    return {
+      vertices: [],
+      normals: [],
+      centroid: { x: 0.0, y: 0.0 },
+      radius: 0.0,
+      count: 0
+    }
+  }
+  
+  // Transform vertices
+  let vertices = []
+  for i = 0; i < hull.count; i = i + 1 {
+    let local_vertex = hull.points[i]
+    let world_vertex = add(position, rotate_vector(rotation, local_vertex))
+    vertices.push(world_vertex)
+  }
+  
+  // Transform normals 
+  let normals = []
+  for i = 0; i < hull.count; i = i + 1 {
+    let i1 = i
+    let i2 = (i + 1) % hull.count
+    let edge = sub(vertices[i2], vertices[i1])
+    
+    // Normal points outward
+    let normal = normalize({ x: edge.y, y: -edge.x })
+    normals.push(normal)
+  }
+  
+  // Transform centroid
+  let local_centroid = compute_polygon_centroid(hull.points)
+  let world_centroid = add(position, rotate_vector(rotation, local_centroid))
+  
+  {
+    vertices,
+    normals,
+    centroid: world_centroid,
+    radius,
+    count: hull.count
+  }
+}
+
+// Create a transformed box polygon (ported from b2MakeOffsetBox)
+pub fn make_offset_box(half_width : Double, half_height : Double, center : Vec2, rotation : Rot, radius : Double) -> Polygon {
+  // Create local box vertices
+  let local_vertices = [
+    { x: -half_width, y: -half_height },
+    { x: half_width, y: -half_height },
+    { x: half_width, y: half_height },
+    { x: -half_width, y: half_height }
+  ]
+  
+  // Transform vertices to world space
+  let vertices = []
+  for vertex in local_vertices {
+    let world_vertex = add(center, rotate_vector(rotation, vertex))
+    vertices.push(world_vertex)
+  }
+  
+  // Compute transformed normals
+  let local_normals = [
+    { x: 0.0, y: -1.0 },  // Bottom
+    { x: 1.0, y: 0.0 },   // Right
+    { x: 0.0, y: 1.0 },   // Top
+    { x: -1.0, y: 0.0 }   // Left
+  ]
+  
+  let normals = []
+  for normal in local_normals {
+    let world_normal = rotate_vector(rotation, normal)
+    normals.push(world_normal)
+  }
+  
+  // Transform centroid (box centroid is at origin in local space)
+  let centroid = add(center, rotate_vector(rotation, { x: 0.0, y: 0.0 }))
+  
+  {
+    vertices,
+    normals,
+    centroid,
+    radius,
+    count: 4
+  }
+}
+
+// Create a rounded box (ported from b2MakeRoundedBox)
+pub fn make_rounded_box(half_width : Double, half_height : Double, radius : Double) -> Polygon {
+  let box = make_polygon_box(half_width, half_height)
+  { ..box, radius }
+}
+
+// Transform an existing polygon (ported from b2TransformPolygon)
+pub fn transform_polygon(transform : Transform, polygon : Polygon) -> Polygon {
+  if polygon.count == 0 {
+    return polygon
+  }
+  
+  // Transform vertices
+  let vertices = []
+  for vertex in polygon.vertices {
+    let world_vertex = transform_point(transform, vertex)
+    vertices.push(world_vertex)
+  }
+  
+  // Transform normals (only rotation, no translation)
+  let normals = []
+  for normal in polygon.normals {
+    let world_normal = rotate_vector(transform.q, normal)
+    normals.push(world_normal)
+  }
+  
+  // Transform centroid
+  let centroid = transform_point(transform, polygon.centroid)
+  
+  {
+    vertices,
+    normals,
+    centroid,
+    radius: polygon.radius,
+    count: polygon.count
+  }
+}
+
+// ============ Regular Polygon Creation Helpers ============
+
+// Create a regular triangle
+pub fn make_triangle(radius : Double) -> Polygon {
+  let vertices = []
+  for i = 0; i < 3; i = i + 1 {
+    let angle = 2.0 * pi * i.to_double() / 3.0
+    let cs = compute_cos_sin(angle)
+    let vertex = {
+      x: radius * cs.cosine,
+      y: radius * cs.sine
+    }
+    vertices.push(vertex)
+  }
+  
+  make_polygon_from_vertices(vertices, 0.0)
+}
+
+// Create a regular pentagon
+pub fn make_pentagon(radius : Double) -> Polygon {
+  let vertices = []
+  for i = 0; i < 5; i = i + 1 {
+    let angle = 2.0 * pi * i.to_double() / 5.0
+    let cs = compute_cos_sin(angle)
+    let vertex = {
+      x: radius * cs.cosine,
+      y: radius * cs.sine
+    }
+    vertices.push(vertex)
+  }
+  
+  make_polygon_from_vertices(vertices, 0.0)
+}
+
+// Create a regular hexagon
+pub fn make_hexagon(radius : Double) -> Polygon {
+  let vertices = []
+  for i = 0; i < 6; i = i + 1 {
+    let angle = 2.0 * pi * i.to_double() / 6.0
+    let cs = compute_cos_sin(angle)
+    let vertex = {
+      x: radius * cs.cosine,
+      y: radius * cs.sine
+    }
+    vertices.push(vertex)
+  }
+  
+  make_polygon_from_vertices(vertices, 0.0)
+}
+
+// Create a regular polygon with specified number of sides
+pub fn make_regular_polygon(sides : Int, radius : Double) -> Polygon {
+  if sides < 3 {
+    // Return empty polygon for invalid sides
+    return {
+      vertices: [],
+      normals: [],
+      centroid: { x: 0.0, y: 0.0 },
+      radius: 0.0,
+      count: 0
+    }
+  }
+  
+  let vertices = []
+  for i = 0; i < sides; i = i + 1 {
+    let angle = 2.0 * pi * i.to_double() / sides.to_double()
+    let cs = compute_cos_sin(angle)
+    let vertex = {
+      x: radius * cs.cosine,
+      y: radius * cs.sine
+    }
+    vertices.push(vertex)
+  }
+  
+  make_polygon_from_vertices(vertices, 0.0)
+}

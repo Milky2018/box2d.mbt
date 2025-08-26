@@ -1,0 +1,675 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/box2d"
+
+// Values
+fn aabb_center(AABB) -> Vec2
+
+fn aabb_contains(AABB, AABB) -> Bool
+
+fn aabb_extents(AABB) -> Vec2
+
+fn aabb_overlap(AABB, AABB) -> Bool
+
+fn aabb_overlaps(AABB, AABB) -> Bool
+
+fn aabb_perimeter(AABB) -> Double
+
+fn aabb_ray_cast(AABB, Vec2, Vec2) -> RayResult
+
+fn aabb_union(AABB, AABB) -> AABB
+
+fn abs_float(Double) -> Double
+
+fn abs_int(Int) -> Int
+
+fn abs_vec2(Vec2) -> Vec2
+
+fn add(Vec2, Vec2) -> Vec2
+
+fn atan2(Double, Double) -> Double
+
+fn body_apply_force(BodySim, Vec2, Vec2) -> BodySim
+
+fn body_apply_impulse(BodySim, Vec2, Vec2) -> BodySim
+
+fn body_get_local_point(BodySim, Vec2) -> Vec2
+
+fn body_get_local_vector(BodySim, Vec2) -> Vec2
+
+fn body_get_position(BodyId) -> Vec2
+
+fn body_get_rotation(BodyId) -> Rot
+
+fn body_get_shapes(BodyId) -> Array[ShapeId]
+
+fn body_get_type(BodyId) -> BodyType
+
+fn body_get_world_point(BodySim, Vec2) -> Vec2
+
+fn body_get_world_vector(BodySim, Vec2) -> Vec2
+
+fn body_is_valid(BodyId) -> Bool
+
+fn body_set_mass_data(BodySim, MassData) -> BodySim
+
+fn clamp_float(Double, Double, Double) -> Double
+
+fn clamp_int(Int, Int, Int) -> Int
+
+fn clamp_vec2(Vec2, Vec2, Vec2) -> Vec2
+
+fn closest_point_on_segment(Vec2, Vec2, Vec2) -> Vec2
+
+fn collide_capsule_and_circle(Capsule, Transform, Circle, Transform) -> Manifold
+
+fn collide_capsules(Capsule, Transform, Capsule, Transform) -> Manifold
+
+fn collide_chain_segment_and_capsule(ChainSegment, Transform, Capsule, Transform, SimplexCache) -> Manifold
+
+fn collide_chain_segment_and_circle(ChainSegment, Transform, Circle, Transform) -> Manifold
+
+fn collide_chain_segment_and_polygon(ChainSegment, Transform, Polygon, Transform, SimplexCache) -> Manifold
+
+fn collide_circle_capsule(Circle, Transform, Capsule, Transform) -> Manifold
+
+fn collide_circles(Circle, Transform, Circle, Transform) -> Manifold
+
+fn collide_polygon_and_capsule(Polygon, Transform, Capsule, Transform) -> Manifold
+
+fn collide_polygon_and_circle(Polygon, Transform, Circle, Transform) -> Manifold
+
+fn collide_polygons(Polygon, Transform, Polygon, Transform) -> Manifold
+
+fn collide_segment_and_capsule(Segment, Transform, Capsule, Transform) -> Manifold
+
+fn collide_segment_and_circle(Segment, Transform, Circle, Transform) -> Manifold
+
+fn collide_segment_and_polygon(Segment, Transform, Polygon, Transform) -> Manifold
+
+fn compute_capsule_aabb(Capsule, Transform) -> AABB
+
+fn compute_capsule_mass(Capsule, Double) -> MassData
+
+fn compute_circle_aabb(Circle, Transform) -> AABB
+
+fn compute_circle_mass(Circle, Double) -> MassData
+
+fn compute_cos_sin(Double) -> CosSin
+
+fn compute_hull(Array[Vec2]) -> Hull
+
+fn compute_polygon_aabb(Polygon, Transform) -> AABB
+
+fn compute_polygon_centroid(Array[Vec2]) -> Vec2
+
+fn compute_polygon_mass(Polygon, Double) -> MassData
+
+fn compute_segment_aabb(Segment, Transform) -> AABB
+
+fn compute_segment_mass(Segment, Double) -> MassData
+
+fn create_body(WorldId, BodyDef) -> BodyId
+
+fn create_body_sim(BodyDef) -> BodySim
+
+fn create_capsule_shape(BodyId, ShapeDef, Capsule) -> ShapeId
+
+fn create_circle_shape(BodyId, ShapeDef, Circle) -> ShapeId
+
+fn create_polygon_shape(BodyId, ShapeDef, Polygon) -> ShapeId
+
+fn create_segment_shape(BodyId, ShapeDef, Segment) -> ShapeId
+
+fn create_world(WorldDef) -> WorldId
+
+fn create_world_from_def(WorldDef) -> World
+
+fn cross(Vec2, Vec2) -> Double
+
+fn cross_sv(Double, Vec2) -> Vec2
+
+fn cross_vs(Vec2, Double) -> Vec2
+
+fn default_body_def() -> BodyDef
+
+fn default_shape_def() -> ShapeDef
+
+fn default_world_def() -> WorldDef
+
+fn distance(Vec2, Vec2) -> Double
+
+fn distance_between_points(Vec2, Vec2) -> Double
+
+fn distance_squared(Vec2, Vec2) -> Double
+
+fn dot(Vec2, Vec2) -> Double
+
+fn empty_hull() -> Hull
+
+fn enlarge_aabb(AABB, AABB) -> (AABB, Bool)
+
+fn get_body_def(BodyId) -> (WorldId, BodyDef)?
+
+fn get_length_and_normalize(Vec2) -> (Double, Vec2)
+
+fn get_shape_def(ShapeId) -> (BodyId, ShapeDef, ShapeType)?
+
+fn get_sweep_transform(Sweep, Double) -> Transform
+
+fn get_world_def(WorldId) -> WorldDef?
+
+fn hello() -> String
+
+fn integrate_body(BodySim, Double) -> BodySim
+
+fn inv_mul_rot(Rot, Rot) -> Rot
+
+fn inv_mul_transforms(Transform, Transform) -> Transform
+
+fn inv_rotate_vector(Rot, Vec2) -> Vec2
+
+fn inv_transform_point(Transform, Vec2) -> Vec2
+
+fn is_normalized(Vec2) -> Bool
+
+fn is_normalized_rot(Rot) -> Bool
+
+fn is_valid_aabb(AABB) -> Bool
+
+fn is_valid_float(Double) -> Bool
+
+fn is_valid_plane(Plane) -> Bool
+
+fn is_valid_ray(Vec2, Vec2, Double) -> Bool
+
+fn is_valid_rotation(Rot) -> Bool
+
+fn is_valid_transform(Transform) -> Bool
+
+fn is_valid_vec2(Vec2) -> Bool
+
+fn left_perp(Vec2) -> Vec2
+
+fn length(Vec2) -> Double
+
+fn length_squared(Vec2) -> Double
+
+fn lerp(Vec2, Vec2, Double) -> Vec2
+
+fn make_box(Double, Double) -> Polygon
+
+fn make_capsule(Vec2, Vec2, Double) -> Capsule
+
+fn make_capsule_horizontal(Double, Double) -> Capsule
+
+fn make_capsule_vertical(Double, Double) -> Capsule
+
+fn make_id(Int, Int) -> Int
+
+fn make_offset_proxy(Array[Vec2], Double, Vec2, Rot) -> ShapeProxy
+
+fn make_polygon_box(Double, Double) -> Polygon
+
+fn make_polygon_square(Double) -> Polygon
+
+fn make_proxy(Array[Vec2], Double) -> ShapeProxy
+
+fn make_rot(Double) -> Rot
+
+fn make_rot_from_unit_vector(Vec2) -> Rot
+
+fn make_segment(Vec2, Vec2) -> Segment
+
+fn make_segment_horizontal(Double) -> Segment
+
+fn make_segment_vertical(Double) -> Segment
+
+let mat22_zero : Mat22
+
+fn max_float(Double, Double) -> Double
+
+fn max_int(Int, Int) -> Int
+
+fn max_vec2(Vec2, Vec2) -> Vec2
+
+fn min_float(Double, Double) -> Double
+
+fn min_int(Int, Int) -> Int
+
+fn min_vec2(Vec2, Vec2) -> Vec2
+
+fn mul_add(Vec2, Double, Vec2) -> Vec2
+
+fn mul_rot(Rot, Rot) -> Rot
+
+fn mul_sub(Vec2, Double, Vec2) -> Vec2
+
+fn mul_sv(Double, Vec2) -> Vec2
+
+fn mul_transforms(Transform, Transform) -> Transform
+
+fn mul_vv(Vec2, Vec2) -> Vec2
+
+fn neg(Vec2) -> Vec2
+
+fn neg_float(Double) -> Double
+
+fn normalize(Vec2) -> Vec2
+
+fn normalize_rot(Rot) -> Rot
+
+let pi : Double
+
+fn plane_separation(Plane, Vec2) -> Double
+
+fn point_in_aabb(Vec2, AABB) -> Bool
+
+fn point_in_capsule(Vec2, Capsule, Transform) -> Bool
+
+fn point_in_circle(Vec2, Vec2, Double) -> Bool
+
+fn point_in_polygon(Vec2, Polygon, Transform) -> Bool
+
+fn ray_cast_circle(Circle, RayCastInput) -> RayResult
+
+fn ray_cast_polygon(Polygon, RayCastInput) -> RayResult
+
+fn ray_cast_segment(Segment, RayCastInput, Bool) -> RayResult
+
+fn relative_angle(Rot, Rot) -> Double
+
+fn right_perp(Vec2) -> Vec2
+
+fn rot_get_angle(Rot) -> Double
+
+fn rot_get_x_axis(Rot) -> Vec2
+
+fn rot_get_y_axis(Rot) -> Vec2
+
+let rot_identity : Rot
+
+fn rotate_vector(Rot, Vec2) -> Vec2
+
+fn segment_distance(Vec2, Vec2, Vec2, Vec2) -> SegmentDistanceResult
+
+fn shape_distance(DistanceInput, SimplexCache) -> (DistanceOutput, SimplexCache)
+
+fn shape_is_valid(ShapeId) -> Bool
+
+let speculative_distance : Double
+
+fn spring_damper(Double, Double, Double, Double, Double) -> Double
+
+fn step_world(World, Double) -> World
+
+fn sub(Vec2, Vec2) -> Vec2
+
+let transform_identity : Transform
+
+fn transform_point(Transform, Vec2) -> Vec2
+
+fn unwind_angle(Double) -> Double
+
+fn validate_hull(Hull) -> Bool
+
+fn vec2_add(Vec2, Vec2) -> Vec2
+
+fn vec2_dot(Vec2, Vec2) -> Double
+
+fn vec2_length(Vec2) -> Double
+
+let vec2_zero : Vec2
+
+fn world_add_body(World, BodySim) -> World
+
+fn world_get_bodies(WorldId) -> Array[BodyId]
+
+fn world_get_body(World, Int) -> BodySim
+
+fn world_get_body_count(World) -> Int
+
+fn world_is_valid(WorldId) -> Bool
+
+fn world_step(WorldId, Double, Int) -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) struct AABB {
+  lower_bound : Vec2
+  upper_bound : Vec2
+}
+impl Eq for AABB
+impl Show for AABB
+
+pub(all) struct BodyDef {
+  mut type_ : BodyType
+  mut position : Vec2
+  mut rotation : Rot
+  mut linear_velocity : Vec2
+  mut angular_velocity : Double
+  mut linear_damping : Double
+  mut angular_damping : Double
+  mut gravity_scale : Double
+  mut sleep_threshold : Double
+  mut enable_sleep : Bool
+  mut is_awake : Bool
+  mut is_enabled : Bool
+}
+impl Eq for BodyDef
+impl Show for BodyDef
+
+pub(all) struct BodyId {
+  id : Int
+}
+impl Eq for BodyId
+impl Show for BodyId
+
+pub(all) struct BodySim {
+  transform : Transform
+  center : Vec2
+  linear_velocity : Vec2
+  angular_velocity : Double
+  force : Vec2
+  torque : Double
+  mass : Double
+  inv_mass : Double
+  inertia : Double
+  inv_inertia : Double
+  body_id : Int
+}
+impl Eq for BodySim
+impl Show for BodySim
+
+pub(all) struct BodyState {
+  linear_velocity : Vec2
+  angular_velocity : Double
+  flags : Int
+}
+impl Eq for BodyState
+impl Show for BodyState
+
+pub(all) enum BodyType {
+  Static
+  Kinematic
+  Dynamic
+}
+impl Eq for BodyType
+impl Show for BodyType
+
+pub(all) struct Capsule {
+  center1 : Vec2
+  center2 : Vec2
+  radius : Double
+}
+impl Eq for Capsule
+impl Show for Capsule
+
+pub(all) struct ChainSegment {
+  ghost1 : Vec2
+  segment : Segment
+  ghost2 : Vec2
+  chain_id : Int
+}
+impl Eq for ChainSegment
+impl Show for ChainSegment
+
+pub(all) struct Circle {
+  center : Vec2
+  radius : Double
+}
+impl Eq for Circle
+impl Show for Circle
+
+pub(all) struct CosSin {
+  cosine : Double
+  sine : Double
+}
+impl Eq for CosSin
+impl Show for CosSin
+
+pub(all) struct DistanceInput {
+  proxy_a : ShapeProxy
+  proxy_b : ShapeProxy
+  transform_a : Transform
+  transform_b : Transform
+  use_radii : Bool
+}
+impl Eq for DistanceInput
+impl Show for DistanceInput
+
+pub(all) struct DistanceOutput {
+  point_a : Vec2
+  point_b : Vec2
+  distance : Double
+  normal : Vec2
+  iterations : Int
+  simplex_count : Int
+}
+impl Eq for DistanceOutput
+impl Show for DistanceOutput
+
+pub(all) struct Hull {
+  points : Array[Vec2]
+  count : Int
+}
+impl Eq for Hull
+impl Show for Hull
+
+pub(all) struct Manifold {
+  normal : Vec2
+  rolling_impulse : Double
+  points : Array[ManifoldPoint]
+  point_count : Int
+}
+impl Eq for Manifold
+impl Show for Manifold
+
+pub(all) struct ManifoldPoint {
+  point : Vec2
+  anchor_a : Vec2
+  anchor_b : Vec2
+  separation : Double
+  normal_impulse : Double
+  tangent_impulse : Double
+  total_normal_impulse : Double
+  normal_velocity : Double
+  id : Int
+  persisted : Bool
+}
+impl Eq for ManifoldPoint
+impl Show for ManifoldPoint
+
+pub(all) struct MassData {
+  mass : Double
+  center : Vec2
+  rotational_inertia : Double
+}
+impl Eq for MassData
+impl Show for MassData
+
+pub(all) struct Mat22 {
+  cx : Vec2
+  cy : Vec2
+}
+impl Eq for Mat22
+impl Show for Mat22
+
+pub(all) struct Plane {
+  normal : Vec2
+  offset : Double
+}
+impl Eq for Plane
+impl Show for Plane
+
+pub(all) struct Polygon {
+  vertices : Array[Vec2]
+  normals : Array[Vec2]
+  centroid : Vec2
+  radius : Double
+  count : Int
+}
+impl Eq for Polygon
+impl Show for Polygon
+
+pub(all) struct RayCastInput {
+  origin : Vec2
+  translation : Vec2
+  max_fraction : Double
+}
+impl Eq for RayCastInput
+impl Show for RayCastInput
+
+pub(all) struct RayResult {
+  shape_id : ShapeId
+  point : Vec2
+  normal : Vec2
+  fraction : Double
+  hit : Bool
+}
+impl Eq for RayResult
+impl Show for RayResult
+
+pub(all) struct Rot {
+  c : Double
+  s : Double
+}
+impl Eq for Rot
+impl Show for Rot
+
+pub(all) struct Segment {
+  point1 : Vec2
+  point2 : Vec2
+}
+impl Eq for Segment
+impl Show for Segment
+
+pub(all) struct SegmentDistanceResult {
+  closest1 : Vec2
+  closest2 : Vec2
+  distance_squared : Double
+  fraction1 : Double
+  fraction2 : Double
+}
+impl Eq for SegmentDistanceResult
+impl Show for SegmentDistanceResult
+
+pub(all) struct ShapeDef {
+  mut density : Double
+  mut friction : Double
+  mut restitution : Double
+  mut is_sensor : Bool
+}
+impl Eq for ShapeDef
+impl Show for ShapeDef
+
+pub(all) struct ShapeId {
+  id : Int
+}
+impl Eq for ShapeId
+impl Show for ShapeId
+
+pub(all) struct ShapeProxy {
+  points : Array[Vec2]
+  count : Int
+  radius : Double
+}
+impl Eq for ShapeProxy
+impl Show for ShapeProxy
+
+pub(all) enum ShapeType {
+  Circle
+  Capsule
+  Polygon
+  Segment
+  ChainSegment
+}
+impl Eq for ShapeType
+impl Show for ShapeType
+
+pub(all) struct Simplex {
+  v1 : SimplexVertex
+  v2 : SimplexVertex
+  v3 : SimplexVertex
+  count : Int
+}
+impl Eq for Simplex
+impl Show for Simplex
+
+pub(all) struct SimplexCache {
+  index_a : Array[Int]
+  index_b : Array[Int]
+  count : Int
+}
+impl Eq for SimplexCache
+impl Show for SimplexCache
+
+pub(all) struct SimplexVertex {
+  w_a : Vec2
+  w_b : Vec2
+  w : Vec2
+  a : Double
+  index_a : Int
+  index_b : Int
+}
+impl Eq for SimplexVertex
+impl Show for SimplexVertex
+
+pub(all) struct Sweep {
+  local_center : Vec2
+  c1 : Vec2
+  c2 : Vec2
+  q1 : Rot
+  q2 : Rot
+}
+impl Eq for Sweep
+impl Show for Sweep
+
+pub(all) struct Transform {
+  p : Vec2
+  q : Rot
+}
+impl Eq for Transform
+impl Show for Transform
+
+pub(all) struct Vec2 {
+  x : Double
+  y : Double
+}
+impl Eq for Vec2
+impl Show for Vec2
+
+pub(all) struct World {
+  world_id : Int
+  gravity : Vec2
+  bodies : Array[BodySim]
+  time_step : Double
+  velocity_iterations : Int
+  position_iterations : Int
+}
+impl Eq for World
+impl Show for World
+
+pub(all) struct WorldDef {
+  gravity : Vec2
+  restitution_threshold : Double
+  hit_event_threshold : Double
+  contact_hertz : Double
+  contact_damping_ratio : Double
+  maximum_linear_speed : Double
+  enable_sleep : Bool
+  enable_continuous : Bool
+}
+impl Eq for WorldDef
+impl Show for WorldDef
+
+pub(all) struct WorldId {
+  id : Int
+}
+impl Eq for WorldId
+impl Show for WorldId
+
+// Type aliases
+
+// Traits
+

@@ -85,59 +85,59 @@ fn detect_collisions(bodies : Array[BodySim]) -> Array[(Int, Int, Manifold)] {
   collisions
 }
 
-// Resolve collision between two bodies
-fn resolve_collision(body_a : BodySim, body_b : BodySim, manifold : Manifold) -> (BodySim, BodySim) {
-  if manifold.point_count == 0 {
-    return (body_a, body_b)
+// Contact constraint solving using proper sequential impulse method
+fn solve_contacts_with_constraints(
+  collisions : Array[(Int, Int, Manifold)],
+  bodies : Array[BodySim],
+  velocity_iterations : Int,
+  position_iterations : Int
+) -> Array[BodySim] {
+  if collisions.length() == 0 {
+    return bodies
   }
   
-  let contact_point = manifold.points[0].point
-  let normal = manifold.normal
+  // Create contact solver from collisions
+  let solver = create_contact_solver(collisions, bodies, velocity_iterations, position_iterations)
   
-  // Relative velocity
-  let rel_velocity = sub(body_b.linear_velocity, body_a.linear_velocity)
-  let normal_velocity = dot(rel_velocity, normal)
-  
-  // Do not resolve if velocities are separating
-  if normal_velocity > 0.0 {
-    return (body_a, body_b)
+  if solver.constraint_count == 0 {
+    return bodies
   }
   
-  // Restitution (bounce)
-  let restitution = 0.2
-  let impulse_magnitude = -(1.0 + restitution) * normal_velocity / (body_a.inv_mass + body_b.inv_mass)
-  let impulse = mul_sv(impulse_magnitude, normal)
+  // Warm start constraints with previous frame impulses
+  let bodies_after_warmstart = warm_start_constraints(solver, bodies)
   
-  // Apply impulse
-  let new_body_a = body_apply_impulse(body_a, mul_sv(-1.0, impulse), contact_point)
-  let new_body_b = body_apply_impulse(body_b, impulse, contact_point)
+  // Solve velocity constraints iteratively
+  let mut current_bodies = bodies_after_warmstart
+  for _iter = 0; _iter < velocity_iterations; _iter = _iter + 1 {
+    current_bodies = solve_velocity_constraints(solver, current_bodies)
+  }
   
-  (new_body_a, new_body_b)
+  // Solve position constraints for stability
+  for _iter = 0; _iter < position_iterations; _iter = _iter + 1 {
+    current_bodies = solve_position_constraints(solver, current_bodies)
+  }
+  
+  current_bodies
 }
 
-// Step world simulation
+// Step world simulation with constraint-based physics
 pub fn step_world(world : World, dt : Double) -> World {
   // Apply gravity
   let bodies_with_gravity = apply_gravity(world.bodies, world.gravity, dt)
   
-  // Velocity iterations
-  let mut current_bodies = bodies_with_gravity
-  for _iter = 0; _iter < world.velocity_iterations; _iter = _iter + 1 {
-    let collisions = detect_collisions(current_bodies)
-    let new_bodies = current_bodies.copy()
-    
-    for collision in collisions {
-      let (i, j, manifold) = collision
-      let (new_body_a, new_body_b) = resolve_collision(new_bodies[i], new_bodies[j], manifold)
-      new_bodies[i] = new_body_a
-      new_bodies[j] = new_body_b
-    }
-    
-    current_bodies = new_bodies
-  }
+  // Detect all collisions for this step
+  let collisions = detect_collisions(bodies_with_gravity)
+  
+  // Solve contact constraints using sequential impulse method
+  let bodies_after_constraints = solve_contacts_with_constraints(
+    collisions, 
+    bodies_with_gravity,
+    world.velocity_iterations,
+    world.position_iterations
+  )
   
   // Integrate positions
-  let final_bodies = integrate_bodies(current_bodies, dt)
+  let final_bodies = integrate_bodies(bodies_after_constraints, dt)
   
   { ..world, bodies: final_bodies }
 }

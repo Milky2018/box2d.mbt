@@ -5,5 +5,5 @@
 // All implementation is organized in separate modules
 
 pub fn hello() -> String {
-  "Box2D MoonBit Port v0.1.0"
+  "Box2D MoonBit Port v0.1.0 - Now with Constraint Solver!"
 }
