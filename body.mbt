@@ -2,7 +2,7 @@
 // Body creation, manipulation, and physics properties
 
 // Internal body representation for simulation
-pub(all) struct BodySim {
+struct BodySim {
   transform : Transform
   center : Vec2
   linear_velocity : Vec2

@@ -1,10 +1,7 @@
 // Box2D Islands System Tests - testing connected body management
 // Tests for islands, solver sets, and connected component organization
 
-// Local constants (mirror islands.mbt constants)
-let awake_set_index = 2
-let static_set_index = 0  
-let disabled_set_index = 1
+// Using constants from islands.mbt
 
 ///|
 test "island creation and management" {

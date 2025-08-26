@@ -30,7 +30,7 @@ test "hello world simulation" {
   assert_true(body_is_valid(body_id))
 
   // Create dynamic body shape
-  let circle : @box2d.Circle = { center: { x: 0.0, y: 0.0 }, radius: 1.0 }
+  let circle = { center: { x: 0.0, y: 0.0 }, radius: 1.0 }
   let shape_def = default_shape_def()
   let shape_id = create_circle_shape(body_id, shape_def, circle)
   assert_true(shape_is_valid(shape_id))
@@ -60,7 +60,7 @@ test "body simulation" {
   assert_true(body_sim.inv_mass > 0.0)
 
   // Test applying force
-  let force : @box2d.Vec2 = { x: 0.0, y: -9.8 } // Gravity-like force
+  let force = { x: 0.0, y: -9.8 } // Gravity-like force
   let center = body_sim.center
   let body_with_force = body_apply_force(body_sim, force, center)
   assert_true(body_with_force.force.y < 0.0)
@@ -76,7 +76,7 @@ test "body simulation" {
 ///|
 test "mass properties" {
   // Test circle mass computation
-  let circle : @box2d.Circle = { center: { x: 0.0, y: 0.0 }, radius: 1.0 }
+  let circle = { center: { x: 0.0, y: 0.0 }, radius: 1.0 }
   let density = 1.0
   let mass_data = compute_circle_mass(circle, density)
   let expected_mass = pi * 1.0 * 1.0 * density // π * r² * density
@@ -85,7 +85,7 @@ test "mass properties" {
   assert_true(mass_data.center.y == 0.0)
 
   // Test polygon mass computation (simplified)
-  let polygon = make_polygon_box(0.5, 0.5)  // Use helper function
+  let polygon = make_polygon_box(0.5, 0.5) // Use helper function
   let poly_mass_data = compute_polygon_mass(polygon, density)
   assert_true(poly_mass_data.mass > 0.0)
 }
@@ -93,12 +93,12 @@ test "mass properties" {
 ///|
 test "impulse application" {
   // Create a dynamic body
-  let body_def : @box2d.BodyDef = default_body_def()
+  let body_def = default_body_def()
   body_def.type_ = Dynamic
   let body_sim = create_body_sim(body_def)
 
   // Apply an impulse
-  let impulse : @box2d.Vec2 = { x: 5.0, y: 0.0 }
+  let impulse = { x: 5.0, y: 0.0 }
   let point = body_sim.center
   let body_with_impulse = body_apply_impulse(body_sim, impulse, point)
 
@@ -116,14 +116,14 @@ test "coordinate transformations" {
   let body_sim = create_body_sim(body_def)
 
   // Test world/local point conversions
-  let local_point : @box2d.Vec2 = { x: 1.0, y: 0.0 }
+  let local_point = { x: 1.0, y: 0.0 }
   let world_point = body_get_world_point(body_sim, local_point)
   let back_to_local = body_get_local_point(body_sim, world_point)
   assert_true(abs_float(back_to_local.x - local_point.x) < 0.001)
   assert_true(abs_float(back_to_local.y - local_point.y) < 0.001)
 
   // Test world/local vector conversions
-  let local_vector : @box2d.Vec2 = { x: 1.0, y: 0.0 }
+  let local_vector = { x: 1.0, y: 0.0 }
   let world_vector = body_get_world_vector(body_sim, local_vector)
   let back_to_local_vec = body_get_local_vector(body_sim, world_vector)
   assert_true(abs_float(back_to_local_vec.x - local_vector.x) < 0.001)
@@ -133,21 +133,15 @@ test "coordinate transformations" {
 ///|
 test "collision manifold" {
   // Test circle-circle collision
-  let circle_a : @box2d.Circle = { center: { x: 0.0, y: 0.0 }, radius: 1.0 }
-  let circle_b : @box2d.Circle = { center: { x: 1.5, y: 0.0 }, radius: 1.0 }
-  let transform_a : @box2d.Transform = {
-    p: { x: 0.0, y: 0.0 },
-    q: rot_identity,
-  }
-  let transform_b : @box2d.Transform = {
-    p: { x: 0.0, y: 0.0 },
-    q: rot_identity,
-  }
+  let circle_a = { center: { x: 0.0, y: 0.0 }, radius: 1.0 }
+  let circle_b = { center: { x: 1.5, y: 0.0 }, radius: 1.0 }
+  let transform_a = { p: { x: 0.0, y: 0.0 }, q: rot_identity }
+  let transform_b = { p: { x: 0.0, y: 0.0 }, q: rot_identity }
   let manifold = collide_circles(circle_a, transform_a, circle_b, transform_b)
   assert_true(manifold.point_count > 0)
 
   // Test separated circles
-  let circle_c : @box2d.Circle = { center: { x: 5.0, y: 0.0 }, radius: 1.0 }
+  let circle_c = { center: { x: 5.0, y: 0.0 }, radius: 1.0 }
   let manifold2 = collide_circles(circle_a, transform_a, circle_c, transform_b)
   assert_true(manifold2.point_count == 0)
 }

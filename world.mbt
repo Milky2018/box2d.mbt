@@ -2,7 +2,7 @@
 // World management and physics simulation loop
 
 // Simple world representation with islands system
-pub(all) struct World {
+struct World {
   world_id : Int
   gravity : Vec2
   bodies : Array[BodySim]
@@ -33,7 +33,7 @@ pub fn create_world_from_def(def : WorldDef) -> World {
 }
 
 // Add body to world
-pub fn world_add_body(world : World, body_sim : BodySim) -> World {
+fn world_add_body(world : World, body_sim : BodySim) -> World {
   let new_bodies = world.bodies.copy()
   new_bodies.push(body_sim)
   { ..world, bodies: new_bodies }

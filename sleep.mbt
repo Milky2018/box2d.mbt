@@ -5,7 +5,7 @@
 let time_to_sleep = 0.5  // Time that a body must be still before it will go to sleep (seconds)
 
 // Check if a body should be flagged as sleepy based on its current velocity (ported from b2FinalizeBodiesTask)
-pub fn update_body_sleep_time(body : BodySim, dt : Double, enable_sleep : Bool) -> BodySim {
+fn update_body_sleep_time(body : BodySim, dt : Double, enable_sleep : Bool) -> BodySim {
   if body.inv_mass == 0.0 {
     // Static bodies don't sleep
     return body
@@ -53,7 +53,7 @@ pub fn update_body_sleep_time(body : BodySim, dt : Double, enable_sleep : Bool) 
 }
 
 // Check if a body is ready to sleep (ported from Box2D TrySleepIsland logic)
-pub fn body_is_ready_to_sleep(body : BodySim) -> Bool {
+fn body_is_ready_to_sleep(body : BodySim) -> Bool {
   if body.inv_mass == 0.0 {
     return false  // Static bodies don't sleep
   }
@@ -66,7 +66,7 @@ pub fn body_is_ready_to_sleep(body : BodySim) -> Bool {
 }
 
 // Wake up a sleeping body (ported from Box2D awakening logic)
-pub fn wake_body(body : BodySim) -> BodySim {
+fn wake_body(body : BodySim) -> BodySim {
   if body.inv_mass == 0.0 {
     return body  // Static bodies are never asleep
   }
@@ -76,7 +76,7 @@ pub fn wake_body(body : BodySim) -> BodySim {
 }
 
 // Put a body to sleep (ported from Box2D TrySleepIsland)
-pub fn sleep_body(body : BodySim) -> BodySim {
+fn sleep_body(body : BodySim) -> BodySim {
   if body.inv_mass == 0.0 {
     return body  // Static bodies don't need sleep state changes
   }
@@ -155,7 +155,7 @@ pub fn should_wake_on_impulse(body : BodySim, impulse : Vec2, angular_impulse : 
 }
 
 // Update sleep time for all bodies in an array (batch processing for performance)
-pub fn update_bodies_sleep_time(bodies : Array[BodySim], dt : Double, enable_sleep : Bool) -> Array[BodySim] {
+fn update_bodies_sleep_time(bodies : Array[BodySim], dt : Double, enable_sleep : Bool) -> Array[BodySim] {
   let result = bodies.copy()
   for i, body in result {
     result[i] = update_body_sleep_time(body, dt, enable_sleep)

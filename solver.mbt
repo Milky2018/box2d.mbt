@@ -2,7 +2,7 @@
 // Sequential impulse constraint solver for contacts and joints
 
 // Contact constraint point (ported from b2ContactConstraintPoint)
-pub(all) struct ContactConstraintPoint {
+pub struct ContactConstraintPoint {
   // Contact point data
   r_a : Vec2               // Vector from body A center to contact point
   r_b : Vec2               // Vector from body B center to contact point
@@ -20,7 +20,7 @@ pub(all) struct ContactConstraintPoint {
 } derive(Eq, Show)
 
 // Contact constraint between two bodies (ported from b2ContactConstraint)  
-pub(all) struct ContactConstraint {
+pub struct ContactConstraint {
   // Bodies involved in contact
   body_a_index : Int       // Index of body A in world bodies array
   body_b_index : Int       // Index of body B in world bodies array
@@ -32,7 +32,7 @@ pub(all) struct ContactConstraint {
   tangent : Vec2           // Contact tangent vector (perpendicular to normal)
   
   // Constraint points
-  mut points : Array[ContactConstraintPoint] // Contact constraint points
+  points : Array[ContactConstraintPoint] // Contact constraint points
   point_count : Int        // Number of valid contact points
   
   // Mass properties
@@ -43,7 +43,7 @@ pub(all) struct ContactConstraint {
 } derive(Eq, Show)
 
 // Contact solver data for a physics step
-pub(all) struct ContactSolver {
+pub struct ContactSolver {
   constraints : Array[ContactConstraint]  // All contact constraints
   constraint_count : Int                  // Number of valid constraints
   velocity_iterations : Int               // Number of velocity iterations
@@ -51,7 +51,7 @@ pub(all) struct ContactSolver {
 } derive(Eq, Show)
 
 // Initialize contact constraint from manifold
-pub fn init_contact_constraint(
+fn init_contact_constraint(
   manifold : Manifold,
   body_a : BodySim, 
   body_b : BodySim,
@@ -126,7 +126,7 @@ pub fn init_contact_constraint(
 }
 
 // Create contact solver from collision manifolds
-pub fn create_contact_solver(
+fn create_contact_solver(
   manifolds : Array[(Int, Int, Manifold)],
   bodies : Array[BodySim],
   velocity_iterations : Int,
@@ -153,7 +153,7 @@ pub fn create_contact_solver(
 }
 
 // Warm start constraints with previous frame impulses
-pub fn warm_start_constraints(solver : ContactSolver, bodies : Array[BodySim]) -> Array[BodySim] {
+fn warm_start_constraints(solver : ContactSolver, bodies : Array[BodySim]) -> Array[BodySim] {
   let result_bodies = bodies.copy()
   
   for constraint in solver.constraints {
@@ -188,7 +188,7 @@ pub fn warm_start_constraints(solver : ContactSolver, bodies : Array[BodySim]) -
 }
 
 // Solve velocity constraints (main constraint solver)
-pub fn solve_velocity_constraints(solver : ContactSolver, bodies : Array[BodySim]) -> Array[BodySim] {
+fn solve_velocity_constraints(solver : ContactSolver, bodies : Array[BodySim]) -> Array[BodySim] {
   let result_bodies = bodies.copy()
   
   for constraint in solver.constraints {
@@ -256,7 +256,7 @@ pub fn solve_velocity_constraints(solver : ContactSolver, bodies : Array[BodySim
 // Use the existing clamp_float function from math_functions.mbt
 
 // Position correction to prevent drift (simplified Baumgarte stabilization)
-pub fn solve_position_constraints(solver : ContactSolver, bodies : Array[BodySim]) -> Array[BodySim] {
+fn solve_position_constraints(solver : ContactSolver, bodies : Array[BodySim]) -> Array[BodySim] {
   let result_bodies = bodies.copy()
   
   for constraint in solver.constraints {

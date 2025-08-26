@@ -904,7 +904,7 @@ pub(all) struct PrismaticJoint {
   enable_limit : Bool             // Enable translation limits
   enable_motor : Bool             // Enable motor
   
-  // Solver data
+  // Solvepr data
   mut impulse : Vec2              // Accumulated impulse for perpendicular and angular constraints
   mut spring_impulse : Double     // Accumulated impulse for spring constraint
   mut motor_impulse : Double      // Accumulated impulse for motor

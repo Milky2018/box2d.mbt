@@ -116,7 +116,13 @@ fn create_capsule_shape(BodyId, ShapeDef, Capsule) -> ShapeId
 
 fn create_circle_shape(BodyId, ShapeDef, Circle) -> ShapeId
 
+fn create_distance_joint_sim(DistanceJointDef, Vec2, Vec2) -> JointSim
+
 fn create_polygon_shape(BodyId, ShapeDef, Polygon) -> ShapeId
+
+fn create_prismatic_joint_sim(PrismaticJointDef, Vec2, Vec2, Vec2) -> JointSim
+
+fn create_revolute_joint_sim(RevoluteJointDef, Vec2) -> JointSim
 
 fn create_segment_shape(BodyId, ShapeDef, Segment) -> ShapeId
 
@@ -131,6 +137,12 @@ fn cross_sv(Double, Vec2) -> Vec2
 fn cross_vs(Vec2, Double) -> Vec2
 
 fn default_body_def() -> BodyDef
+
+fn default_distance_joint_def() -> DistanceJointDef
+
+fn default_prismatic_joint_def() -> PrismaticJointDef
+
+fn default_revolute_joint_def() -> RevoluteJointDef
 
 fn default_shape_def() -> ShapeDef
 
@@ -148,7 +160,11 @@ fn empty_hull() -> Hull
 
 fn enlarge_aabb(AABB, AABB) -> (AABB, Bool)
 
+fn find_sleepy_bodies(Array[BodySim]) -> Array[Int]
+
 fn get_body_def(BodyId) -> (WorldId, BodyDef)?
+
+fn get_distance_joint_length(JointSim, Array[BodySim]) -> Double
 
 fn get_length_and_normalize(Vec2) -> (Double, Vec2)
 
@@ -188,6 +204,12 @@ fn is_valid_transform(Transform) -> Bool
 
 fn is_valid_vec2(Vec2) -> Bool
 
+fn island_add_body(Island, Int) -> Island
+
+fn island_add_contact(Island, Int) -> Island
+
+fn island_add_joint(Island, Int) -> Island
+
 fn left_perp(Vec2) -> Vec2
 
 fn length(Vec2) -> Double
@@ -204,25 +226,45 @@ fn make_capsule_horizontal(Double, Double) -> Capsule
 
 fn make_capsule_vertical(Double, Double) -> Capsule
 
+fn make_hexagon(Double) -> Polygon
+
 fn make_id(Int, Int) -> Int
+
+fn make_offset_box(Double, Double, Vec2, Rot, Double) -> Polygon
+
+fn make_offset_polygon(Hull, Vec2, Rot, Double) -> Polygon
 
 fn make_offset_proxy(Array[Vec2], Double, Vec2, Rot) -> ShapeProxy
 
+fn make_pentagon(Double) -> Polygon
+
+fn make_polygon(Hull, Double) -> Polygon
+
 fn make_polygon_box(Double, Double) -> Polygon
+
+fn make_polygon_from_vertices(Array[Vec2], Double) -> Polygon
 
 fn make_polygon_square(Double) -> Polygon
 
 fn make_proxy(Array[Vec2], Double) -> ShapeProxy
 
+fn make_regular_polygon(Int, Double) -> Polygon
+
 fn make_rot(Double) -> Rot
 
 fn make_rot_from_unit_vector(Vec2) -> Rot
+
+fn make_rounded_box(Double, Double, Double) -> Polygon
 
 fn make_segment(Vec2, Vec2) -> Segment
 
 fn make_segment_horizontal(Double) -> Segment
 
 fn make_segment_vertical(Double) -> Segment
+
+fn make_soft(Double, Double, Double) -> Softness
+
+fn make_triangle(Double) -> Polygon
 
 let mat22_zero : Mat22
 
@@ -231,6 +273,8 @@ fn max_float(Double, Double) -> Double
 fn max_int(Int, Int) -> Int
 
 fn max_vec2(Vec2, Vec2) -> Vec2
+
+fn merge_islands(Island, Island) -> Island
 
 fn min_float(Double, Double) -> Double
 
@@ -270,6 +314,12 @@ fn point_in_circle(Vec2, Vec2, Double) -> Bool
 
 fn point_in_polygon(Vec2, Polygon, Transform) -> Bool
 
+fn prepare_distance_joint(JointSim, Array[BodySim], Double) -> JointSim
+
+fn prepare_prismatic_joint(JointSim, Array[BodySim], Double) -> JointSim
+
+fn prepare_revolute_joint(JointSim, Array[BodySim], Double) -> JointSim
+
 fn ray_cast_circle(Circle, RayCastInput) -> RayResult
 
 fn ray_cast_polygon(Polygon, RayCastInput) -> RayResult
@@ -296,6 +346,18 @@ fn shape_distance(DistanceInput, SimplexCache) -> (DistanceOutput, SimplexCache)
 
 fn shape_is_valid(ShapeId) -> Bool
 
+fn should_wake_on_force(BodySim, Vec2, Double) -> Bool
+
+fn should_wake_on_impulse(BodySim, Vec2, Double) -> Bool
+
+fn sleep_all_bodies(Array[BodySim]) -> Array[BodySim]
+
+fn solve_distance_joint_velocity(JointSim, Array[BodySim], Double, Bool) -> (JointSim, Array[BodySim])
+
+fn solve_prismatic_joint_velocity(JointSim, Array[BodySim], Double, Bool) -> (JointSim, Array[BodySim])
+
+fn solve_revolute_joint_velocity(JointSim, Array[BodySim], Double, Bool) -> (JointSim, Array[BodySim])
+
 let speculative_distance : Double
 
 fn spring_damper(Double, Double, Double, Double, Double) -> Double
@@ -307,6 +369,8 @@ fn sub(Vec2, Vec2) -> Vec2
 let transform_identity : Transform
 
 fn transform_point(Transform, Vec2) -> Vec2
+
+fn transform_polygon(Transform, Polygon) -> Polygon
 
 fn unwind_angle(Double) -> Double
 
@@ -320,13 +384,23 @@ fn vec2_length(Vec2) -> Double
 
 let vec2_zero : Vec2
 
-fn world_add_body(World, BodySim) -> World
+fn wake_all_bodies(Array[BodySim]) -> Array[BodySim]
+
+fn warm_start_distance_joint(JointSim, Array[BodySim]) -> Array[BodySim]
+
+fn warm_start_prismatic_joint(JointSim, Array[BodySim]) -> Array[BodySim]
+
+fn warm_start_revolute_joint(JointSim, Array[BodySim]) -> Array[BodySim]
 
 fn world_get_bodies(WorldId) -> Array[BodyId]
 
 fn world_get_body(World, Int) -> BodySim
 
 fn world_get_body_count(World) -> Int
+
+fn world_get_island_stats(World) -> (Int, Int, Int)
+
+fn world_has_active_islands(World) -> Bool
 
 fn world_is_valid(WorldId) -> Bool
 
@@ -365,19 +439,7 @@ pub(all) struct BodyId {
 impl Eq for BodyId
 impl Show for BodyId
 
-pub(all) struct BodySim {
-  transform : Transform
-  center : Vec2
-  linear_velocity : Vec2
-  angular_velocity : Double
-  force : Vec2
-  torque : Double
-  mass : Double
-  inv_mass : Double
-  inertia : Double
-  inv_inertia : Double
-  body_id : Int
-}
+type BodySim
 impl Eq for BodySim
 impl Show for BodySim
 
@@ -421,6 +483,46 @@ pub(all) struct Circle {
 impl Eq for Circle
 impl Show for Circle
 
+pub struct ContactConstraint {
+  body_a_index : Int
+  body_b_index : Int
+  normal : Vec2
+  friction : Double
+  restitution : Double
+  tangent : Vec2
+  points : Array[ContactConstraintPoint]
+  point_count : Int
+  inv_mass_a : Double
+  inv_mass_b : Double
+  inv_i_a : Double
+  inv_i_b : Double
+}
+impl Eq for ContactConstraint
+impl Show for ContactConstraint
+
+pub struct ContactConstraintPoint {
+  r_a : Vec2
+  r_b : Vec2
+  mut normal_impulse : Double
+  mut tangent_impulse : Double
+  normal_mass : Double
+  tangent_mass : Double
+  velocity_bias : Double
+  warm_normal_impulse : Double
+  warm_tangent_impulse : Double
+}
+impl Eq for ContactConstraintPoint
+impl Show for ContactConstraintPoint
+
+pub struct ContactSolver {
+  constraints : Array[ContactConstraint]
+  constraint_count : Int
+  velocity_iterations : Int
+  position_iterations : Int
+}
+impl Eq for ContactSolver
+impl Show for ContactSolver
+
 pub(all) struct CosSin {
   cosine : Double
   sine : Double
@@ -437,6 +539,52 @@ pub(all) struct DistanceInput {
 }
 impl Eq for DistanceInput
 impl Show for DistanceInput
+
+pub(all) struct DistanceJoint {
+  length : Double
+  hertz : Double
+  damping_ratio : Double
+  lower_spring_force : Double
+  upper_spring_force : Double
+  min_length : Double
+  max_length : Double
+  max_motor_force : Double
+  motor_speed : Double
+  mut impulse : Double
+  mut lower_impulse : Double
+  mut upper_impulse : Double
+  mut motor_impulse : Double
+  mut index_a : Int
+  mut index_b : Int
+  mut anchor_a : Vec2
+  mut anchor_b : Vec2
+  mut delta_center : Vec2
+  mut distance_softness : Softness
+  mut axial_mass : Double
+  enable_spring : Bool
+  enable_limit : Bool
+  enable_motor : Bool
+}
+impl Eq for DistanceJoint
+impl Show for DistanceJoint
+
+pub(all) struct DistanceJointDef {
+  base : JointDef
+  mut length : Double
+  mut enable_spring : Bool
+  mut lower_spring_force : Double
+  mut upper_spring_force : Double
+  mut hertz : Double
+  mut damping_ratio : Double
+  mut enable_limit : Bool
+  mut min_length : Double
+  mut max_length : Double
+  mut enable_motor : Bool
+  mut max_motor_force : Double
+  mut motor_speed : Double
+}
+impl Eq for DistanceJointDef
+impl Show for DistanceJointDef
 
 pub(all) struct DistanceOutput {
   point_a : Vec2
@@ -455,6 +603,76 @@ pub(all) struct Hull {
 }
 impl Eq for Hull
 impl Show for Hull
+
+type Island
+impl Eq for Island
+impl Show for Island
+
+pub(all) struct Joint {
+  joint_type : JointType
+  set_index : Int
+  color_index : Int
+  local_index : Int
+  edges : (JointEdge, JointEdge)
+  joint_id : Int
+  island_id : Int
+  island_prev : Int
+  island_next : Int
+  collide_connected : Bool
+}
+impl Eq for Joint
+impl Show for Joint
+
+pub(all) struct JointDef {
+  body_id_a : BodyId
+  body_id_b : BodyId
+  collide_connected : Bool
+}
+impl Eq for JointDef
+impl Show for JointDef
+
+pub(all) struct JointEdge {
+  body_id : Int
+  prev_key : Int
+  next_key : Int
+}
+impl Eq for JointEdge
+impl Show for JointEdge
+
+pub(all) struct JointId {
+  id : Int
+}
+impl Eq for JointId
+impl Show for JointId
+
+pub(all) struct JointSim {
+  joint_type : JointType
+  body_id_a : Int
+  body_id_b : Int
+  local_frame_a : Transform
+  local_frame_b : Transform
+  mut inv_mass_a : Double
+  mut inv_mass_b : Double
+  mut inv_ia : Double
+  mut inv_ib : Double
+  mut constraint_softness : Softness
+  distance_joint : DistanceJoint
+  revolute_joint : RevoluteJoint
+  prismatic_joint : PrismaticJoint
+}
+impl Eq for JointSim
+impl Show for JointSim
+
+pub(all) enum JointType {
+  DistanceJoint
+  MotorJoint
+  PrismaticJoint
+  RevoluteJoint
+  WeldJoint
+  WheelJoint
+}
+impl Eq for JointType
+impl Show for JointType
 
 pub(all) struct Manifold {
   normal : Vec2
@@ -512,6 +730,49 @@ pub(all) struct Polygon {
 impl Eq for Polygon
 impl Show for Polygon
 
+pub(all) struct PrismaticJoint {
+  target_translation : Double
+  hertz : Double
+  damping_ratio : Double
+  lower_translation : Double
+  upper_translation : Double
+  max_motor_force : Double
+  motor_speed : Double
+  enable_spring : Bool
+  enable_limit : Bool
+  enable_motor : Bool
+  mut impulse : Vec2
+  mut spring_impulse : Double
+  mut motor_impulse : Double
+  mut lower_impulse : Double
+  mut upper_impulse : Double
+  mut index_a : Int
+  mut index_b : Int
+  mut frame_a : Transform
+  mut frame_b : Transform
+  mut delta_center : Vec2
+  mut axial_mass : Double
+  mut spring_softness : Softness
+}
+impl Eq for PrismaticJoint
+impl Show for PrismaticJoint
+
+pub(all) struct PrismaticJointDef {
+  base : JointDef
+  mut target_translation : Double
+  mut enable_spring : Bool
+  mut hertz : Double
+  mut damping_ratio : Double
+  mut enable_limit : Bool
+  mut lower_translation : Double
+  mut upper_translation : Double
+  mut enable_motor : Bool
+  mut max_motor_force : Double
+  mut motor_speed : Double
+}
+impl Eq for PrismaticJointDef
+impl Show for PrismaticJointDef
+
 pub(all) struct RayCastInput {
   origin : Vec2
   translation : Vec2
@@ -529,6 +790,49 @@ pub(all) struct RayResult {
 }
 impl Eq for RayResult
 impl Show for RayResult
+
+pub(all) struct RevoluteJoint {
+  mut linear_impulse : Vec2
+  mut spring_impulse : Double
+  mut motor_impulse : Double
+  mut lower_impulse : Double
+  mut upper_impulse : Double
+  hertz : Double
+  damping_ratio : Double
+  target_angle : Double
+  max_motor_torque : Double
+  motor_speed : Double
+  lower_angle : Double
+  upper_angle : Double
+  mut index_a : Int
+  mut index_b : Int
+  mut frame_a : Transform
+  mut frame_b : Transform
+  mut delta_center : Vec2
+  mut axial_mass : Double
+  mut spring_softness : Softness
+  enable_spring : Bool
+  enable_motor : Bool
+  enable_limit : Bool
+}
+impl Eq for RevoluteJoint
+impl Show for RevoluteJoint
+
+pub(all) struct RevoluteJointDef {
+  base : JointDef
+  mut target_angle : Double
+  mut enable_spring : Bool
+  mut hertz : Double
+  mut damping_ratio : Double
+  mut enable_limit : Bool
+  mut lower_angle : Double
+  mut upper_angle : Double
+  mut enable_motor : Bool
+  mut max_motor_torque : Double
+  mut motor_speed : Double
+}
+impl Eq for RevoluteJointDef
+impl Show for RevoluteJointDef
 
 pub(all) struct Rot {
   c : Double
@@ -615,6 +919,14 @@ pub(all) struct SimplexVertex {
 impl Eq for SimplexVertex
 impl Show for SimplexVertex
 
+pub(all) struct Softness {
+  bias_rate : Double
+  mass_scale : Double
+  impulse_scale : Double
+}
+impl Eq for Softness
+impl Show for Softness
+
 pub(all) struct Sweep {
   local_center : Vec2
   c1 : Vec2
@@ -639,26 +951,19 @@ pub(all) struct Vec2 {
 impl Eq for Vec2
 impl Show for Vec2
 
-pub(all) struct World {
-  world_id : Int
-  gravity : Vec2
-  bodies : Array[BodySim]
-  time_step : Double
-  velocity_iterations : Int
-  position_iterations : Int
-}
+type World
 impl Eq for World
 impl Show for World
 
 pub(all) struct WorldDef {
-  gravity : Vec2
+  mut gravity : Vec2
   restitution_threshold : Double
   hit_event_threshold : Double
   contact_hertz : Double
   contact_damping_ratio : Double
   maximum_linear_speed : Double
-  enable_sleep : Bool
-  enable_continuous : Bool
+  mut enable_sleep : Bool
+  mut enable_continuous : Bool
 }
 impl Eq for WorldDef
 impl Show for WorldDef

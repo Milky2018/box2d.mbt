@@ -10,7 +10,7 @@ let _first_sleeping_set = 3     // Sleeping islands start here (unused for now)
 let _null_island_index = -1     // Invalid island ID (unused for now)
 
 // Island data structure (ported from b2Island)
-pub(all) struct Island {
+struct Island {
   set_index : Int           // Index of solver set containing this island
   local_index : Int         // Island index within the set  
   island_id : Int           // Unique island identifier
@@ -35,31 +35,31 @@ pub(all) struct Island {
 } derive(Eq, Show)
 
 // Solver set containing related islands (ported from b2SolverSet)
-pub(all) struct SolverSet {
+priv struct SolverSet {
   set_index : Int                           // Stable set identifier
-  mut islands : Array[Island]               // Islands in this set
-  mut island_count : Int                    // Number of active islands
-  mut bodies : Array[BodySim]               // Bodies in this set
-  mut body_count : Int                      // Number of active bodies
-  mut contacts : Array[(Int, Int, Manifold)]    // Contacts in this set
-  mut contact_count : Int                   // Number of active contacts
-  mut joints : Array[Int]                   // Joint indices in this set
-  mut joint_count : Int                     // Number of active joints
+  islands : Array[Island]               // Islands in this set
+  island_count : Int                    // Number of active islands
+  bodies : Array[BodySim]               // Bodies in this set
+  body_count : Int                      // Number of active bodies
+  contacts : Array[(Int, Int, Manifold)]    // Contacts in this set
+  contact_count : Int                   // Number of active contacts
+  joints : Array[Int]                   // Joint indices in this set
+  joint_count : Int                     // Number of active joints
 } derive(Eq, Show)
 
 // World island management (ported from Box2D world structure)
-pub(all) struct IslandManager {
-  mut solver_sets : Array[SolverSet]        // All solver sets
-  mut set_count : Int                       // Number of active sets
-  mut next_island_id : Int                  // Island ID counter
-  
+priv struct IslandManager {
+  solver_sets : Array[SolverSet]        // All solver sets
+  set_count : Int                       // Number of active sets
+  next_island_id : Int                  // Island ID counter
+
   // Performance tracking
-  mut island_merge_count : Int              // Islands merged this step
-  mut island_split_count : Int              // Islands split this step
+  island_merge_count : Int              // Islands merged this step
+  island_split_count : Int              // Islands split this step
 } derive(Eq, Show)
 
 // Create empty island
-pub fn create_island(set_index : Int, local_index : Int, island_id : Int) -> Island {
+fn create_island(set_index : Int, local_index : Int, island_id : Int) -> Island {
   {
     set_index,
     local_index,
@@ -78,7 +78,7 @@ pub fn create_island(set_index : Int, local_index : Int, island_id : Int) -> Isl
 }
 
 // Create empty solver set
-pub fn create_solver_set(set_index : Int) -> SolverSet {
+fn create_solver_set(set_index : Int) -> SolverSet {
   {
     set_index,
     islands: [],
@@ -93,7 +93,7 @@ pub fn create_solver_set(set_index : Int) -> SolverSet {
 }
 
 // Create island manager
-pub fn create_island_manager() -> IslandManager {
+fn create_island_manager() -> IslandManager {
   let solver_sets = []
   
   // Create standard solver sets
@@ -247,7 +247,7 @@ pub fn merge_islands(island_a : Island, island_b : Island) -> Island {
 }
 
 // Check if island should sleep (ported from Box2D sleep logic)
-pub fn island_should_sleep(island : Island, bodies : Array[BodySim]) -> Bool {
+fn island_should_sleep(island : Island, bodies : Array[BodySim]) -> Bool {
   if island.body_count == 0 || island.constraint_remove_count > 0 {
     return false  // Empty islands or pending splits can't sleep
   }
@@ -275,7 +275,7 @@ pub fn island_should_sleep(island : Island, bodies : Array[BodySim]) -> Bool {
 }
 
 // Build islands from collision manifolds and joints (ported from Box2D island building)  
-pub fn build_islands_from_collisions(
+fn build_islands_from_collisions(
   collisions : Array[(Int, Int, Manifold)], 
   bodies : Array[BodySim]
 ) -> IslandManager {
@@ -324,7 +324,7 @@ pub fn build_islands_from_collisions(
 }
 
 // Solve islands using constraint solver (integration point)
-pub fn solve_islands(
+fn solve_islands(
   manager : IslandManager,
   bodies : Array[BodySim], 
   collisions : Array[(Int, Int, Manifold)],
@@ -375,7 +375,7 @@ pub fn solve_islands(
 }
 
 // Put an island to sleep (ported from Box2D TrySleepIsland)
-pub fn put_island_to_sleep(manager : IslandManager, island : Island, bodies : Array[BodySim]) -> (IslandManager, Array[BodySim]) {
+fn put_island_to_sleep(manager : IslandManager, island : Island, bodies : Array[BodySim]) -> (IslandManager, Array[BodySim]) {
   if !island_should_sleep(island, bodies) {
     // Island not ready to sleep
     return (manager, bodies)
@@ -400,27 +400,27 @@ pub fn put_island_to_sleep(manager : IslandManager, island : Island, bodies : Ar
 }
 
 // Wake an island (ported from Box2D WakeSolverSet)
-pub fn wake_island(manager : IslandManager, island : Island, bodies : Array[BodySim]) -> (IslandManager, Array[BodySim]) {
-  // Wake all bodies in the island
-  let updated_bodies = bodies.copy()
-  let mut body_index = island.head_body
-  let mut bodies_processed = 0
+// fn wake_island(manager : IslandManager, island : Island, bodies : Array[BodySim]) -> (IslandManager, Array[BodySim]) {
+//   // Wake all bodies in the island
+//   let updated_bodies = bodies.copy()
+//   let mut body_index = island.head_body
+//   let mut bodies_processed = 0
   
-  while body_index != -1 && bodies_processed < island.body_count {
-    if body_index >= 0 && body_index < updated_bodies.length() {
-      updated_bodies[body_index] = wake_body(updated_bodies[body_index])
-    }
-    bodies_processed = bodies_processed + 1
-    body_index = body_index + 1  // Simplified linked list traversal
-  }
+//   while body_index != -1 && bodies_processed < island.body_count {
+//     if body_index >= 0 && body_index < updated_bodies.length() {
+//       updated_bodies[body_index] = wake_body(updated_bodies[body_index])
+//     }
+//     bodies_processed = bodies_processed + 1
+//     body_index = body_index + 1  // Simplified linked list traversal
+//   }
   
-  // In a full implementation, we would move the island to the awake solver set
-  // For now, we just mark bodies as awake
-  (manager, updated_bodies)
-}
+//   // In a full implementation, we would move the island to the awake solver set
+//   // For now, we just mark bodies as awake
+//   (manager, updated_bodies)
+// }
 
 // Process sleeping for all islands (called during world step)
-pub fn process_island_sleeping(manager : IslandManager, bodies : Array[BodySim], enable_sleep : Bool) -> (IslandManager, Array[BodySim]) {
+fn process_island_sleeping(manager : IslandManager, bodies : Array[BodySim], enable_sleep : Bool) -> (IslandManager, Array[BodySim]) {
   if !enable_sleep {
     return (manager, bodies)
   }
@@ -445,7 +445,7 @@ pub fn process_island_sleeping(manager : IslandManager, bodies : Array[BodySim],
 }
 
 // Get island statistics for debugging/monitoring
-pub fn get_island_stats(manager : IslandManager) -> (Int, Int, Int) {
+fn get_island_stats(manager : IslandManager) -> (Int, Int, Int) {
   let mut total_islands = 0
   let mut total_bodies = 0
   let mut awake_islands = 0
