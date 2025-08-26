@@ -28,6 +28,10 @@ pub(all) struct ShapeId {
   id : Int
 } derive(Eq, Show)
 
+pub(all) struct JointId {
+  id : Int
+} derive(Eq, Show)
+
 // Shape geometry
 pub(all) struct Circle {
   center : Vec2
@@ -81,6 +85,77 @@ pub(all) struct WorldDef {
   maximum_linear_speed : Double
   mut enable_sleep : Bool
   mut enable_continuous : Bool
+} derive(Eq, Show)
+
+// Softness type for constraint softening (ported from b2Softness in Box2D)
+pub(all) struct Softness {
+  bias_rate : Double              // Bias correction rate
+  mass_scale : Double             // Mass scaling for soft constraints
+  impulse_scale : Double          // Impulse scaling for soft constraints
+} derive(Eq, Show)
+
+// Joint types (ported from Box2D b2JointType)
+pub(all) enum JointType {
+  DistanceJoint
+  MotorJoint
+  PrismaticJoint
+  RevoluteJoint
+  WeldJoint
+  WheelJoint
+} derive(Eq, Show)
+
+// Base joint definition (ported from Box2D b2JointDef)
+pub(all) struct JointDef {
+  body_id_a : BodyId              // First attached body
+  body_id_b : BodyId              // Second attached body
+  collide_connected : Bool        // Set this flag to true if the attached bodies should collide
+} derive(Eq, Show)
+
+// Distance joint definition (ported from Box2D b2DistanceJointDef)
+pub(all) struct DistanceJointDef {
+  base : JointDef                 // Base joint definition
+  mut length : Double             // The rest length of this joint
+  mut enable_spring : Bool        // Enable the distance constraint to behave like a spring
+  mut lower_spring_force : Double // The lower spring force controls how much tension it can sustain
+  mut upper_spring_force : Double // The upper spring force controls how much compression it can sustain
+  mut hertz : Double              // The spring linear stiffness Hertz, cycles per second
+  mut damping_ratio : Double      // The spring damping ratio (non-dimensional)
+  mut enable_limit : Bool         // Enable/disable the joint limit
+  mut min_length : Double         // Minimum length. Clamped to a stable minimum value
+  mut max_length : Double         // Maximum length. Must be greater than or equal to the minimum length
+  mut enable_motor : Bool         // Enable/disable the joint motor
+  mut max_motor_force : Double    // The maximum motor force in newtons
+  mut motor_speed : Double        // The desired motor speed, usually in meters per second
+} derive(Eq, Show)
+
+// Revolute joint definition (ported from b2RevoluteJointDef)
+pub(all) struct RevoluteJointDef {
+  base : JointDef                     // Base joint definition
+  mut target_angle : Double          // Target angle for spring-damper (radians)
+  mut enable_spring : Bool           // Enable rotational spring
+  mut hertz : Double                 // Spring frequency (Hz)
+  mut damping_ratio : Double         // Spring damping ratio
+  mut enable_limit : Bool            // Enable joint limits
+  mut lower_angle : Double           // Lower angle limit (radians)
+  mut upper_angle : Double           // Upper angle limit (radians)  
+  mut enable_motor : Bool            // Enable joint motor
+  mut max_motor_torque : Double      // Maximum motor torque (N⋅m)
+  mut motor_speed : Double           // Desired motor speed (rad/s)
+} derive(Eq, Show)
+
+// Prismatic joint definition (ported from b2PrismaticJointDef)
+pub(all) struct PrismaticJointDef {
+  base : JointDef                     // Base joint definition
+  mut target_translation : Double    // Target translation for spring-damper (meters)
+  mut enable_spring : Bool           // Enable translational spring
+  mut hertz : Double                 // Spring frequency (Hz)
+  mut damping_ratio : Double         // Spring damping ratio
+  mut enable_limit : Bool            // Enable joint limits
+  mut lower_translation : Double     // Lower translation limit (meters)
+  mut upper_translation : Double     // Upper translation limit (meters)
+  mut enable_motor : Bool            // Enable joint motor
+  mut max_motor_force : Double       // Maximum motor force (N)
+  mut motor_speed : Double           // Desired motor speed (m/s)
 } derive(Eq, Show)
 
 pub(all) struct BodyDef {

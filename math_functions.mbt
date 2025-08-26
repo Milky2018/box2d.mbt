@@ -324,6 +324,7 @@ pub fn rot_get_angle(q : Rot) -> Double {
   atan2(q.s, q.c)
 }
 
+
 // Get the x-axis
 pub fn rot_get_x_axis(q : Rot) -> Vec2 {
   { x: q.c, y: q.s }
