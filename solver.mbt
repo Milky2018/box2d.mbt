@@ -29,11 +29,16 @@ pub struct ContactConstraint {
   normal : Vec2            // Contact normal (from A to B)
   friction : Double        // Combined friction coefficient
   restitution : Double     // Combined restitution coefficient
+  rolling_friction : Double // Combined rolling friction coefficient
   tangent : Vec2           // Contact tangent vector (perpendicular to normal)
   
   // Constraint points
   points : Array[ContactConstraintPoint] // Contact constraint points
   point_count : Int        // Number of valid contact points
+  
+  // Rolling friction constraint
+  mut rolling_impulse : Double     // Accumulated rolling friction impulse
+  rolling_mass : Double            // Effective mass for rolling friction constraint
   
   // Mass properties
   inv_mass_a : Double      // Inverse mass of body A  
@@ -51,18 +56,26 @@ pub struct ContactSolver {
 } derive(Eq, Show)
 
 // Initialize contact constraint from manifold
-fn init_contact_constraint(
+pub fn init_contact_constraint(
   manifold : Manifold,
   body_a : BodySim, 
   body_b : BodySim,
   body_a_index : Int,
-  body_b_index : Int
+  body_b_index : Int,
+  shape_friction_a : Double,
+  shape_friction_b : Double,
+  shape_restitution_a : Double,
+  shape_restitution_b : Double,
+  shape_rolling_friction_a : Double,
+  shape_rolling_friction_b : Double,
+  timestep : Double
 ) -> ContactConstraint {
   if manifold.point_count == 0 {
     return {
       body_a_index, body_b_index,
-      normal: vec2_zero, friction: 0.0, restitution: 0.0, tangent: vec2_zero,
+      normal: vec2_zero, friction: 0.0, restitution: 0.0, rolling_friction: 0.0, tangent: vec2_zero,
       points: [], point_count: 0,
+      rolling_impulse: 0.0, rolling_mass: 0.0,
       inv_mass_a: body_a.inv_mass, inv_mass_b: body_b.inv_mass,
       inv_i_a: body_a.inv_inertia, inv_i_b: body_b.inv_inertia
     }
@@ -71,9 +84,27 @@ fn init_contact_constraint(
   let normal = manifold.normal
   let tangent = { x: normal.y, y: -normal.x } // Perpendicular to normal
   
-  // Combine material properties
-  let friction = 0.3 // TODO: Use actual shape friction values  
-  let restitution = 0.2 // TODO: Use actual shape restitution values
+  // Combine material properties using Box2D mixing rules
+  // Friction: geometric mean (sqrt(a * b))
+  let friction = if shape_friction_a == 0.0 || shape_friction_b == 0.0 {
+    0.0  // If either friction is 0, combined friction is 0
+  } else {
+    (shape_friction_a * shape_friction_b).sqrt()
+  }
+  
+  // Restitution: maximum value
+  let restitution = max_float(shape_restitution_a, shape_restitution_b)
+  
+  // Rolling friction: geometric mean (same as regular friction)
+  let rolling_friction = if shape_rolling_friction_a == 0.0 || shape_rolling_friction_b == 0.0 {
+    0.0  // If either rolling friction is 0, combined rolling friction is 0
+  } else {
+    (shape_rolling_friction_a * shape_rolling_friction_b).sqrt()
+  }
+  
+  // Compute rolling friction effective mass
+  let rolling_mass = body_a.inv_inertia + body_b.inv_inertia
+  let rolling_mass_inv = if rolling_mass > 0.0 { 1.0 / rolling_mass } else { 0.0 }
   
   // Initialize constraint points
   let constraint_points = []
@@ -98,8 +129,9 @@ fn init_contact_constraint(
                       body_b.inv_inertia * rt_b * rt_b
     
     // Velocity bias for position correction (Baumgarte stabilization)
+    // Uses beta = 0.2 and actual timestep for proper bias calculation
     let velocity_bias = if manifold_point.separation < 0.0 {
-      -0.2 * 60.0 * manifold_point.separation // TODO: Use actual timestep
+      -0.2 * (1.0 / timestep) * manifold_point.separation
     } else {
       0.0
     }
@@ -118,8 +150,9 @@ fn init_contact_constraint(
   }
   
   {
-    body_a_index, body_b_index, normal, friction, restitution, tangent,
+    body_a_index, body_b_index, normal, friction, restitution, rolling_friction, tangent,
     points: constraint_points, point_count: manifold.point_count,
+    rolling_impulse: manifold.rolling_impulse, rolling_mass: rolling_mass_inv,
     inv_mass_a: body_a.inv_mass, inv_mass_b: body_b.inv_mass,
     inv_i_a: body_a.inv_inertia, inv_i_b: body_b.inv_inertia
   }
@@ -130,7 +163,8 @@ fn create_contact_solver(
   manifolds : Array[(Int, Int, Manifold)],
   bodies : Array[BodySim],
   velocity_iterations : Int,
-  position_iterations : Int
+  position_iterations : Int,
+  timestep : Double
 ) -> ContactSolver {
   let constraints = []
   
@@ -139,7 +173,20 @@ fn create_contact_solver(
     if manifold.point_count > 0 {
       let body_a = bodies[body_a_idx]
       let body_b = bodies[body_b_idx]
-      let constraint = init_contact_constraint(manifold, body_a, body_b, body_a_idx, body_b_idx)
+      let constraint = init_contact_constraint(
+        manifold, 
+        body_a, 
+        body_b, 
+        body_a_idx, 
+        body_b_idx,
+        0.6,  // Default friction from default_shape_def()
+        0.6,  // Default friction from default_shape_def()
+        0.0,  // Default restitution from default_shape_def()
+        0.0,  // Default restitution from default_shape_def()
+        0.2,  // Default rolling friction 
+        0.2,  // Default rolling friction
+        timestep
+      )
       constraints.push(constraint)
     }
   }
@@ -243,6 +290,30 @@ fn solve_velocity_constraints(solver : ContactSolver, bodies : Array[BodySim]) -
       w_a = w_a - constraint.inv_i_a * cross(point.r_a, normal_P)
       v_b = add(v_b, mul_sv(constraint.inv_mass_b, normal_P))  
       w_b = w_b + constraint.inv_i_b * cross(point.r_b, normal_P)
+    }
+    
+    // Rolling friction constraint - applied once per contact constraint (not per point)
+    if constraint.rolling_friction > 0.0 && constraint.rolling_mass > 0.0 {
+      // Rolling friction opposes relative angular velocity
+      let relative_angular_velocity = w_b - w_a
+      let mut rolling_lambda = constraint.rolling_mass * (-relative_angular_velocity)
+      
+      // Clamp rolling friction impulse based on normal impulse magnitude
+      let total_normal_impulse = {
+        let mut total = 0.0
+        for point in constraint.points {
+          total = total + (point.normal_impulse).abs()
+        }
+        total
+      }
+      let max_rolling_friction = constraint.rolling_friction * total_normal_impulse
+      let new_rolling_impulse = clamp_float(constraint.rolling_impulse + rolling_lambda, -max_rolling_friction, max_rolling_friction)
+      rolling_lambda = new_rolling_impulse - constraint.rolling_impulse
+      constraint.rolling_impulse = new_rolling_impulse
+      
+      // Apply rolling friction impulse to angular velocities only
+      w_a = w_a - constraint.inv_i_a * rolling_lambda
+      w_b = w_b + constraint.inv_i_b * rolling_lambda
     }
     
     // Update bodies

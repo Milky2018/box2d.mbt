@@ -942,6 +942,44 @@ pub fn default_prismatic_joint_def() -> PrismaticJointDef {
   }
 }
 
+// Motor joint simulation data (ported from b2MotorJoint)
+pub(all) struct MotorJoint {
+  // Configuration
+  linear_offset : Vec2            // Position of bodyB minus position of bodyA (in bodyA frame)
+  angular_offset : Double         // Angle of bodyB minus angle of bodyA (radians)
+  max_force : Double              // Maximum motor force
+  max_torque : Double             // Maximum motor torque
+  correction_factor : Double      // Position correction factor [0,1]
+  
+  // Solver data
+  mut linear_impulse : Vec2       // Accumulated impulse for linear constraint
+  mut angular_impulse : Double    // Accumulated impulse for angular constraint
+  
+  // Cached solver data
+  mut index_a : Int               // Body A solver index
+  mut index_b : Int               // Body B solver index
+  mut r_a : Vec2                  // Vector from body A center to constraint anchor
+  mut r_b : Vec2                  // Vector from body B center to constraint anchor
+  mut linear_mass : Mat22         // Effective mass matrix for linear constraint
+  mut angular_mass : Double       // Effective mass for angular constraint
+} derive(Eq, Show)
+
+// Create default motor joint definition
+pub fn default_motor_joint_def() -> MotorJointDef {
+  {
+    base: {
+      body_id_a: { id: -1 },
+      body_id_b: { id: -1 },
+      collide_connected: false
+    },
+    linear_offset: { x: 0.0, y: 0.0 },
+    angular_offset: 0.0,
+    max_force: 1.0,
+    max_torque: 1.0,
+    correction_factor: 0.3
+  }
+}
+
 // Create prismatic joint simulation (ported from b2CreatePrismaticJoint)
 pub fn create_prismatic_joint_sim(
   def : PrismaticJointDef,

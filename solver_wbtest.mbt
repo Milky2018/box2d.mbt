@@ -26,7 +26,7 @@ test "contact constraint initialization" {
 
   // Initialize contact constraint
   let constraint = init_contact_constraint(
-    manifold, body_sim_a, body_sim_b, 0, 1,
+    manifold, body_sim_a, body_sim_b, 0, 1, 0.6, 0.6, 0.0, 0.0, 0.2, 0.2, 1.0/60.0
   )
 
   // Validate constraint initialization
@@ -63,7 +63,7 @@ test "contact constraint with no collision" {
     point_count: 0,
   }
   let constraint = init_contact_constraint(
-    empty_manifold, body_sim_a, body_sim_b, 0, 1,
+    empty_manifold, body_sim_a, body_sim_b, 0, 1, 0.6, 0.6, 0.0, 0.0, 0.2, 0.2, 1.0/60.0
   )
 
   // Should create valid but empty constraint
@@ -98,7 +98,7 @@ test "contact solver creation" {
   let manifolds = [(0, 1, manifold)]
 
   // Create contact solver
-  let solver = create_contact_solver(manifolds, bodies, 8, 3)
+  let solver = create_contact_solver(manifolds, bodies, 8, 3, 1.0/60.0)
 
   // Validate solver creation
   assert_true(solver.constraint_count == 1)
@@ -113,7 +113,7 @@ test "contact solver with no collisions" {
   let body_sim = create_body_sim(default_body_def())
   let bodies = [body_sim]
   let manifolds = []
-  let solver = create_contact_solver(manifolds, bodies, 8, 3)
+  let solver = create_contact_solver(manifolds, bodies, 8, 3, 1.0/60.0)
 
   // Should create valid but empty solver
   assert_true(solver.constraint_count == 0)
@@ -147,7 +147,7 @@ test "warm starting constraints" {
     body_sim_b.transform,
   )
   let manifolds = [(0, 1, manifold)]
-  let solver = create_contact_solver(manifolds, bodies, 8, 3)
+  let solver = create_contact_solver(manifolds, bodies, 8, 3, 1.0/60.0)
 
   // Apply warm starting
   let bodies_after_warmstart = warm_start_constraints(solver, bodies)
@@ -189,7 +189,7 @@ test "velocity constraint solving" {
     body_sim_b.transform,
   )
   let manifolds = [(0, 1, manifold)]
-  let solver = create_contact_solver(manifolds, bodies, 8, 3)
+  let solver = create_contact_solver(manifolds, bodies, 8, 3, 1.0/60.0)
 
   // Apply constraint solving
   let bodies_after_solving = solve_velocity_constraints(solver, bodies)
@@ -230,7 +230,7 @@ test "position constraint solving" {
     body_sim_b.transform,
   )
   let manifolds = [(0, 1, manifold)]
-  let solver = create_contact_solver(manifolds, bodies, 8, 3)
+  let solver = create_contact_solver(manifolds, bodies, 8, 3, 1.0/60.0)
 
   // Apply position correction
   let bodies_after_correction = solve_position_constraints(solver, bodies)
@@ -273,7 +273,7 @@ test "constraint solver with static body" {
   )
   if manifold.point_count > 0 {
     let manifolds = [(0, 1, manifold)]
-    let solver = create_contact_solver(manifolds, bodies, 8, 3)
+    let solver = create_contact_solver(manifolds, bodies, 8, 3, 1.0/60.0)
 
     // Apply constraint solving
     let bodies_after_solving = solve_velocity_constraints(solver, bodies)
@@ -317,7 +317,7 @@ test "constraint solver validation" {
   let manifolds = [(0, 1, manifold)]
 
   // Create and validate solver
-  let solver = create_contact_solver(manifolds, bodies, 8, 3)
+  let solver = create_contact_solver(manifolds, bodies, 8, 3, 1.0/60.0)
 
   // Validate solver integrity
   assert_true(solver.constraints.length() == solver.constraint_count)
@@ -381,8 +381,8 @@ test "constraint solver convergence" {
   let manifolds = [(0, 1, manifold)]
 
   // Test with different iteration counts
-  let solver_few = create_contact_solver(manifolds, bodies, 1, 1) // Few iterations
-  let solver_many = create_contact_solver(manifolds, bodies, 10, 5) // Many iterations
+  let solver_few = create_contact_solver(manifolds, bodies, 1, 1, 1.0/60.0) // Few iterations
+  let solver_many = create_contact_solver(manifolds, bodies, 10, 5, 1.0/60.0) // Many iterations
 
   // Both should create valid solvers
   assert_true(solver_few.constraint_count == 1)

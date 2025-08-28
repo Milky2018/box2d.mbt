@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:box2d.org)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(moon check:*)",
+      "Bash(moon test:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "acceptEdits"
+  }
+}

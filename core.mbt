@@ -64,8 +64,26 @@ pub fn default_body_def() -> BodyDef {
 }
 
 ///|
+// Default collision filter - collides with everything
+pub fn default_collision_filter() -> CollisionFilter {
+  { category_bits: 0x0001, mask_bits: 0xFFFF, group_index: 0 }
+}
+
+// Test if two collision filters should allow collision (ported from b2ShouldCollide)
+pub fn should_collide(filter_a : CollisionFilter, filter_b : CollisionFilter) -> Bool {
+  // Different groups with negative indices never collide
+  if filter_a.group_index != 0 && filter_a.group_index == filter_b.group_index {
+    return filter_a.group_index > 0  // Same positive group = collide, same negative group = don't collide
+  }
+  
+  // Check category/mask collision
+  let collide_mask = (filter_a.mask_bits.land(filter_b.category_bits)) != 0 && 
+                     (filter_b.mask_bits.land(filter_a.category_bits)) != 0
+  return collide_mask
+}
+
 pub fn default_shape_def() -> ShapeDef {
-  { density: 1.0, friction: 0.6, restitution: 0.0, is_sensor: false }
+  { density: 1.0, friction: 0.6, restitution: 0.0, rolling_friction: 0.2, filter: default_collision_filter(), is_sensor: false }
 }
 
 // Shape helpers
@@ -370,4 +388,303 @@ pub fn world_step(
       break
     }
   }
+}
+
+// Overlap queries for spatial testing
+
+// Test if a point overlaps with a circle (ported from b2PointInCircle)
+pub fn test_point_in_circle(point : Vec2, circle : Circle, transform : Transform) -> Bool {
+  let center_world = transform_point(transform, circle.center)
+  let d = sub(point, center_world)
+  let distance_squared = dot(d, d)
+  return distance_squared <= circle.radius * circle.radius
+}
+
+// Test if a point overlaps with a polygon (ported from b2PointInPolygon)
+pub fn test_point_in_polygon(point : Vec2, polygon : Polygon, transform : Transform) -> Bool {
+  let local_point = inv_transform_point(transform, point)
+  
+  for i = 0; i < polygon.count; i = i + 1 {
+    let vertex = polygon.vertices[i]
+    let normal = polygon.normals[i]
+    let separation = dot(sub(local_point, vertex), normal)
+    if separation > 0.0 {
+      return false  // Point is outside this edge
+    }
+  }
+  return true  // Point is inside all edges
+}
+
+// Test if a point overlaps with a capsule (ported from b2PointInCapsule)
+pub fn test_point_in_capsule(point : Vec2, capsule : Capsule, transform : Transform) -> Bool {
+  let local_point = inv_transform_point(transform, point)
+  let p1 = capsule.center1
+  let p2 = capsule.center2
+  let radius = capsule.radius
+  
+  // Project point onto line segment
+  let segment = sub(p2, p1)
+  let segment_length_squared = dot(segment, segment)
+  
+  if segment_length_squared < epsilon {
+    // Degenerate capsule - treat as circle
+    let d = sub(local_point, p1)
+    return dot(d, d) <= radius * radius
+  }
+  
+  let t = clamp_float(dot(sub(local_point, p1), segment) / segment_length_squared, 0.0, 1.0)
+  let projection = add(p1, mul_sv(t, segment))
+  let d = sub(local_point, projection)
+  return dot(d, d) <= radius * radius
+}
+
+// Test if two AABBs overlap (ported from b2AABB_Overlaps)
+pub fn test_aabb_overlap(aabb_a : AABB, aabb_b : AABB) -> Bool {
+  return aabb_a.lower_bound.x <= aabb_b.upper_bound.x && 
+         aabb_a.upper_bound.x >= aabb_b.lower_bound.x &&
+         aabb_a.lower_bound.y <= aabb_b.upper_bound.y &&
+         aabb_a.upper_bound.y >= aabb_b.lower_bound.y
+}
+
+// Test if a point is inside an AABB (ported from b2AABB_Contains)
+pub fn test_point_in_aabb(point : Vec2, aabb : AABB) -> Bool {
+  return point.x >= aabb.lower_bound.x && point.x <= aabb.upper_bound.x &&
+         point.y >= aabb.lower_bound.y && point.y <= aabb.upper_bound.y
+}
+
+// Shape casting and ray casting queries
+
+// Cast a ray against a circle (ported from b2RayCastCircle)
+pub fn raycast_circle(input : RayCastInput, circle : Circle, transform : Transform) -> RayResult {
+  let center_world = transform_point(transform, circle.center)
+  let s = sub(input.origin, center_world)
+  let b = dot(s, input.translation)
+  let c = dot(s, s) - circle.radius * circle.radius
+  
+  // Solve quadratic equation
+  let discriminant = b * b - c
+  if discriminant < 0.0 {
+    return { shape_id: { id: -1 }, point: { x: 0.0, y: 0.0 }, normal: { x: 0.0, y: 0.0 }, fraction: 0.0, hit: false }
+  }
+  
+  let fraction = -b - discriminant.sqrt()
+  if fraction < 0.0 || fraction > input.max_fraction {
+    return { shape_id: { id: -1 }, point: { x: 0.0, y: 0.0 }, normal: { x: 0.0, y: 0.0 }, fraction: 0.0, hit: false }
+  }
+  
+  let hit_point = add(input.origin, mul_sv(fraction, input.translation))
+  let normal = normalize(sub(hit_point, center_world))
+  
+  {
+    shape_id: { id: -1 },  // Shape ID would be provided by caller
+    point: hit_point,
+    normal,
+    fraction,
+    hit: true
+  }
+}
+
+// Cast a ray against a polygon (ported from b2RayCastPolygon)
+pub fn raycast_polygon(input : RayCastInput, polygon : Polygon, transform : Transform) -> RayResult {
+  // Transform ray to polygon local space
+  let local_origin = inv_transform_point(transform, input.origin)
+  let local_translation = inv_rotate_vector(transform.q, input.translation)
+  
+  let mut t_min = 0.0
+  let mut t_max = input.max_fraction
+  let mut hit_normal = { x: 0.0, y: 0.0 }
+  let mut hit_edge = -1
+  
+  for i = 0; i < polygon.count; i = i + 1 {
+    let vertex = polygon.vertices[i]
+    let normal = polygon.normals[i]
+    
+    let numerator = dot(sub(vertex, local_origin), normal)
+    let denominator = dot(local_translation, normal)
+    
+    if denominator == 0.0 {
+      if numerator < 0.0 {
+        // Ray is parallel and outside
+        return { shape_id: { id: -1 }, point: { x: 0.0, y: 0.0 }, normal: { x: 0.0, y: 0.0 }, fraction: 0.0, hit: false }
+      }
+    } else {
+      let t = numerator / denominator
+      if denominator < 0.0 {
+        // Ray entering
+        if t > t_min {
+          t_min = t
+          hit_normal = normal
+          hit_edge = i
+        }
+      } else {
+        // Ray exiting
+        if t < t_max {
+          t_max = t
+        }
+      }
+      
+      if t_min > t_max {
+        return { shape_id: { id: -1 }, point: { x: 0.0, y: 0.0 }, normal: { x: 0.0, y: 0.0 }, fraction: 0.0, hit: false }
+      }
+    }
+  }
+  
+  if hit_edge >= 0 && t_min >= 0.0 && t_min <= input.max_fraction {
+    let hit_point = add(input.origin, mul_sv(t_min, input.translation))
+    let world_normal = rotate_vector(transform.q, hit_normal)
+    
+    {
+      shape_id: { id: -1 },  // Shape ID would be provided by caller
+      point: hit_point,
+      normal: world_normal,
+      fraction: t_min,
+      hit: true
+    }
+  } else {
+    { shape_id: { id: -1 }, point: { x: 0.0, y: 0.0 }, normal: { x: 0.0, y: 0.0 }, fraction: 0.0, hit: false }
+  }
+}
+
+// Cast a ray against a capsule (ported from b2RayCastCapsule)
+pub fn raycast_capsule(input : RayCastInput, capsule : Capsule, transform : Transform) -> RayResult {
+  // Transform ray to capsule local space
+  let local_origin = inv_transform_point(transform, input.origin)
+  let local_translation = inv_rotate_vector(transform.q, input.translation)
+  
+  let p1 = capsule.center1
+  let p2 = capsule.center2
+  let radius = capsule.radius
+  
+  // Create a "thick line segment" by expanding endpoints with radius
+  let segment = sub(p2, p1)
+  let segment_length = length(segment)
+  
+  if segment_length < epsilon {
+    // Degenerate capsule - treat as circle
+    let circle = { center: p1, radius }
+    let local_input = { origin: local_origin, translation: local_translation, max_fraction: input.max_fraction }
+    let result = raycast_circle(local_input, circle, { p: { x: 0.0, y: 0.0 }, q: rot_identity })
+    if result.hit {
+      return {
+        shape_id: { id: -1 },
+        point: transform_point(transform, result.point),
+        normal: rotate_vector(transform.q, result.normal),
+        fraction: result.fraction,
+        hit: true
+      }
+    } else {
+      return result
+    }
+  }
+  
+  let axis = mul_sv(1.0 / segment_length, segment)
+  let _perpendicular = { x: -axis.y, y: axis.x }  // For potential future use in full capsule raycasting
+  
+  // Test against the two rounded ends (circles)
+  let circle1 = { center: p1, radius }
+  let circle2 = { center: p2, radius }
+  
+  let local_input = { origin: local_origin, translation: local_translation, max_fraction: input.max_fraction }
+  let result1 = raycast_circle(local_input, circle1, { p: { x: 0.0, y: 0.0 }, q: rot_identity })
+  let result2 = raycast_circle(local_input, circle2, { p: { x: 0.0, y: 0.0 }, q: rot_identity })
+  
+  // Return the closest hit
+  let mut best_result = { shape_id: { id: -1 }, point: { x: 0.0, y: 0.0 }, normal: { x: 0.0, y: 0.0 }, fraction: 0.0, hit: false }
+  let mut best_fraction = input.max_fraction + 1.0
+  
+  if result1.hit && result1.fraction < best_fraction {
+    best_result = {
+      shape_id: { id: -1 },
+      point: transform_point(transform, result1.point),
+      normal: rotate_vector(transform.q, result1.normal),
+      fraction: result1.fraction,
+      hit: true
+    }
+    best_fraction = result1.fraction
+  }
+  
+  if result2.hit && result2.fraction < best_fraction {
+    best_result = {
+      shape_id: { id: -1 },
+      point: transform_point(transform, result2.point),
+      normal: rotate_vector(transform.q, result2.normal),
+      fraction: result2.fraction,
+      hit: true
+    }
+    best_fraction = result2.fraction
+  }
+  
+  return best_result
+}
+
+// Debug drawing utilities
+
+// Create default debug drawing context
+pub fn create_debug_draw_context() -> DebugDrawContext {
+  { commands: [], flags: [DrawShapes] }
+}
+
+// Add debug drawing command to context
+pub fn add_debug_command(context : DebugDrawContext, command : DebugDrawCommand) -> DebugDrawContext {
+  let new_commands = context.commands.copy()
+  new_commands.push(command)
+  { ..context, commands: new_commands }
+}
+
+// Standard colors for debug drawing
+pub let debug_color_red : Color = { r: 1.0, g: 0.0, b: 0.0, a: 1.0 }
+pub let debug_color_green : Color = { r: 0.0, g: 1.0, b: 0.0, a: 1.0 }
+pub let debug_color_blue : Color = { r: 0.0, g: 0.0, b: 1.0, a: 1.0 }
+pub let debug_color_yellow : Color = { r: 1.0, g: 1.0, b: 0.0, a: 1.0 }
+pub let debug_color_white : Color = { r: 1.0, g: 1.0, b: 1.0, a: 1.0 }
+pub let debug_color_gray : Color = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 }
+
+// Draw a circle shape for debugging
+pub fn debug_draw_circle(context : DebugDrawContext, circle : Circle, transform : Transform, color : Color) -> DebugDrawContext {
+  let center_world = transform_point(transform, circle.center)
+  add_debug_command(context, DrawCircle(center_world, circle.radius, color))
+}
+
+// Draw a polygon shape for debugging
+pub fn debug_draw_polygon(context : DebugDrawContext, polygon : Polygon, transform : Transform, color : Color) -> DebugDrawContext {
+  let world_vertices = []
+  for i = 0; i < polygon.count; i = i + 1 {
+    let world_vertex = transform_point(transform, polygon.vertices[i])
+    world_vertices.push(world_vertex)
+  }
+  add_debug_command(context, DrawPolygon(world_vertices, color))
+}
+
+// Draw a capsule shape for debugging
+pub fn debug_draw_capsule(context : DebugDrawContext, capsule : Capsule, transform : Transform, color : Color) -> DebugDrawContext {
+  let center1_world = transform_point(transform, capsule.center1)
+  let center2_world = transform_point(transform, capsule.center2)
+  
+  // Draw the two end circles
+  let context1 = add_debug_command(context, DrawCircle(center1_world, capsule.radius, color))
+  let context2 = add_debug_command(context1, DrawCircle(center2_world, capsule.radius, color))
+  
+  // Draw connecting lines (simplified representation)
+  add_debug_command(context2, DrawLine(center1_world, center2_world, color))
+}
+
+// Draw a body's transform (coordinate frame)
+pub fn debug_draw_transform(context : DebugDrawContext, transform : Transform) -> DebugDrawContext {
+  add_debug_command(context, DrawTransform(transform))
+}
+
+// Draw an AABB for debugging
+pub fn debug_draw_aabb(context : DebugDrawContext, aabb : AABB, color : Color) -> DebugDrawContext {
+  let vertices = [
+    { x: aabb.lower_bound.x, y: aabb.lower_bound.y },
+    { x: aabb.upper_bound.x, y: aabb.lower_bound.y },
+    { x: aabb.upper_bound.x, y: aabb.upper_bound.y },
+    { x: aabb.lower_bound.x, y: aabb.upper_bound.y }
+  ]
+  add_debug_command(context, DrawPolygon(vertices, color))
+}
+
+// Clear debug drawing commands
+pub fn clear_debug_commands(context : DebugDrawContext) -> DebugDrawContext {
+  { ..context, commands: [] }
 }

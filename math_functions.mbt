@@ -2,6 +2,9 @@
 
 // Types are available from same package automatically
 
+// Mathematical constants
+pub let epsilon : Double = 1.0e-6  // Small epsilon for floating point comparisons
+
 // Validation functions (ported from math_functions.c line by line)
 
 // bool b2IsValidFloat( float a )

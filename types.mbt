@@ -158,6 +158,16 @@ pub(all) struct PrismaticJointDef {
   mut motor_speed : Double           // Desired motor speed (m/s)
 } derive(Eq, Show)
 
+// Motor joint definition (ported from b2MotorJointDef)
+pub(all) struct MotorJointDef {
+  base : JointDef                     // Base joint definition
+  mut linear_offset : Vec2            // Position of bodyB minus position of bodyA (in bodyA frame)
+  mut angular_offset : Double         // Angle of bodyB minus angle of bodyA (radians)
+  mut max_force : Double              // Maximum motor force (N)
+  mut max_torque : Double             // Maximum motor torque (N⋅m)  
+  mut correction_factor : Double      // Position correction factor [0,1]
+} derive(Eq, Show)
+
 pub(all) struct BodyDef {
   mut type_ : BodyType
   mut position : Vec2
@@ -173,10 +183,19 @@ pub(all) struct BodyDef {
   mut is_enabled : Bool
 } derive(Eq, Show)
 
+// Collision filtering (ported from b2Filter in Box2D)
+pub(all) struct CollisionFilter {
+  category_bits : Int    // What category this shape belongs to (bitmask)
+  mask_bits : Int        // What categories this shape collides with (bitmask)
+  group_index : Int      // Group index for collision filtering (0 = no group)
+} derive(Eq, Show)
+
 pub(all) struct ShapeDef {
   mut density : Double
   mut friction : Double
   mut restitution : Double
+  mut rolling_friction : Double
+  mut filter : CollisionFilter
   mut is_sensor : Bool
 } derive(Eq, Show)
 
@@ -276,4 +295,77 @@ pub(all) struct Manifold {
   rolling_impulse : Double      // Angular impulse applied for rolling resistance
   points : Array[ManifoldPoint] // The manifold points, up to two are possible in 2D
   point_count : Int             // The number of contacts points, will be 0, 1, or 2
+} derive(Eq, Show)
+
+// Contact event types (ported from Box2D contact events)
+pub(all) enum ContactEventType {
+  BeginContact    // Contact started this frame
+  EndContact      // Contact ended this frame
+  PreSolve        // Before contact constraint solving
+  PostSolve       // After contact constraint solving  
+} derive(Eq, Show)
+
+// Contact event data passed to callbacks
+pub(all) struct ContactEvent {
+  event_type : ContactEventType    // Type of contact event
+  shape_id_a : ShapeId            // First shape in contact
+  shape_id_b : ShapeId            // Second shape in contact  
+  body_id_a : BodyId              // First body in contact
+  body_id_b : BodyId              // Second body in contact
+  manifold : Manifold             // Contact manifold data
+  normal_impulse : Double         // Total normal impulse (for post-solve events)
+  tangent_impulse : Double        // Total tangent impulse (for post-solve events)
+} derive(Eq, Show)
+
+// Contact ID for tracking contact persistence
+pub(all) struct ContactId {
+  shape_a : Int     // Shape A ID
+  shape_b : Int     // Shape B ID
+  body_a : Int      // Body A index  
+  body_b : Int      // Body B index
+} derive(Eq, Show)
+
+// Contact cache entry for tracking contact lifecycle
+struct ContactCacheEntry {
+  contact_id : ContactId          // Unique contact identifier
+  was_touching : Bool             // Was touching in previous frame
+  is_touching : Bool              // Is touching in current frame  
+  manifold : Manifold             // Current contact manifold
+  normal_impulse : Double         // Accumulated normal impulse
+  tangent_impulse : Double        // Accumulated tangent impulse
+} derive(Eq, Show)
+
+// Debug drawing interface (ported from Box2D b2DebugDraw)
+pub(all) enum DebugDrawFlags {
+  DrawShapes       // Draw shapes
+  DrawJoints       // Draw joint connections  
+  DrawAABBs        // Draw axis aligned bounding boxes
+  DrawPairs        // Draw broad-phase pairs
+  DrawCenterOfMass // Draw center of mass frames
+  DrawStats        // Draw performance statistics
+} derive(Eq, Show)
+
+// Color for debug drawing (RGBA)
+pub(all) struct Color {
+  r : Double  // Red component [0,1]
+  g : Double  // Green component [0,1] 
+  b : Double  // Blue component [0,1]
+  a : Double  // Alpha component [0,1]
+} derive(Eq, Show)
+
+// Debug drawing command (for rendering system to process)
+pub(all) enum DebugDrawCommand {
+  DrawLine(Vec2, Vec2, Color)          // Draw line from p1 to p2
+  DrawCircle(Vec2, Double, Color)      // Draw circle at center with radius
+  DrawSolidCircle(Vec2, Double, Color) // Draw filled circle
+  DrawPolygon(Array[Vec2], Color)      // Draw polygon outline
+  DrawSolidPolygon(Array[Vec2], Color) // Draw filled polygon
+  DrawSegment(Vec2, Vec2, Color)       // Draw line segment
+  DrawTransform(Transform)             // Draw coordinate frame
+} derive(Eq, Show)
+
+// Debug drawing context
+pub(all) struct DebugDrawContext {
+  commands : Array[DebugDrawCommand]   // Commands to execute
+  flags : Array[DebugDrawFlags]       // What to draw
 } derive(Eq, Show)

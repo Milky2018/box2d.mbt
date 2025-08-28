@@ -1,7 +1,7 @@
 // Box2D World simulation - basic physics stepping
 // World management and physics simulation loop
 
-// Simple world representation with islands system
+// Simple world representation with islands system and contact events
 struct World {
   world_id : Int
   gravity : Vec2
@@ -12,6 +12,7 @@ struct World {
   island_manager : IslandManager
   sleep_threshold : Double  // Energy threshold for body sleeping
   enable_sleep : Bool       // Whether sleep is enabled for this world
+  contact_event_manager : ContactEventManager  // Contact event system
 } derive(Eq, Show)
 
 // World storage - currently unused, can be added back when needed
@@ -28,7 +29,8 @@ pub fn create_world_from_def(def : WorldDef) -> World {
     position_iterations: 3,
     island_manager: create_island_manager(),
     sleep_threshold: 0.01,  // Default sleep energy threshold
-    enable_sleep: def.enable_sleep
+    enable_sleep: def.enable_sleep,
+    contact_event_manager: create_contact_event_manager()
   }
 }
 
@@ -76,6 +78,11 @@ fn detect_collisions(bodies : Array[BodySim]) -> Array[(Int, Int, Manifold)] {
         continue
       }
       
+      // Apply collision filtering
+      if not(should_collide(body_a.collision_filter, body_b.collision_filter)) {
+        continue
+      }
+      
       // For now, treat all bodies as unit circles for collision
       let circle_a = { center: { x: 0.0, y: 0.0 }, radius: 1.0 }
       let circle_b = { center: { x: 0.0, y: 0.0 }, radius: 1.0 }
@@ -102,8 +109,9 @@ fn solve_contacts_with_constraints(
     return bodies
   }
   
-  // Create contact solver from collisions
-  let solver = create_contact_solver(collisions, bodies, velocity_iterations, position_iterations)
+  // Create contact solver from collisions - use default 60fps timestep for now
+  let timestep = 1.0 / 60.0
+  let solver = create_contact_solver(collisions, bodies, velocity_iterations, position_iterations, timestep)
   
   if solver.constraint_count == 0 {
     return bodies
@@ -137,6 +145,16 @@ pub fn step_world(world : World, dt : Double) -> World {
   // Detect all collisions for this step
   let collisions = detect_collisions(bodies_with_sleep_time)
   
+  // Process contact events (begin/end contact detection)
+  let (updated_event_manager, contact_events) = process_contact_events(world.contact_event_manager, collisions)
+  
+  // Fire begin/end contact events
+  fire_contact_events(updated_event_manager, contact_events)
+  
+  // Generate and fire pre-solve events
+  let pre_solve_events = generate_pre_solve_events(updated_event_manager, collisions)
+  fire_contact_events(updated_event_manager, pre_solve_events)
+  
   // Build islands from current collisions and contacts
   let updated_island_manager = build_islands_from_collisions(collisions, bodies_with_sleep_time)
   
@@ -159,7 +177,7 @@ pub fn step_world(world : World, dt : Double) -> World {
     world.enable_sleep
   )
   
-  { ..world, bodies: final_bodies, island_manager: final_island_manager }
+  { ..world, bodies: final_bodies, island_manager: final_island_manager, contact_event_manager: updated_event_manager }
 }
 
 // Get body count in world
@@ -181,4 +199,30 @@ pub fn world_get_island_stats(world : World) -> (Int, Int, Int) {
 pub fn world_has_active_islands(world : World) -> Bool {
   let (_, _, awake_islands) = world_get_island_stats(world)
   awake_islands > 0
+}
+
+// Contact event callback management
+
+// Set begin contact callback for world
+pub fn world_set_begin_contact_callback(world : World, callback : ContactEventCallback) -> World {
+  let updated_manager = set_begin_contact_callback(world.contact_event_manager, callback)
+  { ..world, contact_event_manager: updated_manager }
+}
+
+// Set end contact callback for world
+pub fn world_set_end_contact_callback(world : World, callback : ContactEventCallback) -> World {
+  let updated_manager = set_end_contact_callback(world.contact_event_manager, callback)
+  { ..world, contact_event_manager: updated_manager }
+}
+
+// Set pre-solve callback for world
+pub fn world_set_pre_solve_callback(world : World, callback : ContactEventCallback) -> World {
+  let updated_manager = set_pre_solve_callback(world.contact_event_manager, callback)
+  { ..world, contact_event_manager: updated_manager }
+}
+
+// Set post-solve callback for world
+pub fn world_set_post_solve_callback(world : World, callback : ContactEventCallback) -> World {
+  let updated_manager = set_post_solve_callback(world.contact_event_manager, callback)
+  { ..world, contact_event_manager: updated_manager }
 }
